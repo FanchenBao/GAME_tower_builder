@@ -1,7 +1,7 @@
 import pygame
 from pygame.sprite import Group
-# from settings import Settings
-# from piggy import Piggy
+from settings import Settings
+from block import Block
 # from button import Button
 # from rock_stats import RockStats
 # from score_board import ScoreBoard
@@ -25,7 +25,7 @@ def run_game():
 
 	# stats = GameStats(ai_settings, filename)
 
-	# piggy = Piggy(screen, ai_settings)
+	block = Block(screen, ai_settings)
 	# bullets = Group()
 	
 	# rocks = Group()
@@ -42,8 +42,9 @@ def run_game():
 	
 	# The main loop of the game
 	while True:
-		gf.check_events()
+		gf.check_events(block)
 		# if stats.game_active:
+		gf.update_block(block, ai_settings)
 		# 	piggy.update()
 		# 	gf.fire_bullet(ai_settings, screen, piggy, bullets)
 		# 	gf.update_bullets(screen, ai_settings, rocks, bullets, rewards, stats, score_board)
@@ -60,6 +61,6 @@ def run_game():
 		# # msg2 = 'Press "P" to Play'
 		# # play_button = Button(screen, ai_settings, msg1, msg2)
 
-		# gf.update_screen(ai_settings, screen, piggy, bullets, stats, play_button, rocks, rewards, shields, score_board)
+		gf.update_screen(ai_settings, screen, block)
 		
 run_game()

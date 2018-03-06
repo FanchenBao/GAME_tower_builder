@@ -1,14 +1,22 @@
 import sys
 import pygame
-from bullet import Bullet
-from rock import Rock
-from reward_stats import RewardStats
-from reward import Reward
+# from bullet import Bullet
+# from rock import Rock
+# from reward_stats import RewardStats
+# from reward import Reward
 # from missile import Missile
-from shield import Shield
+# from shield import Shield
 # from time import clock
 # from random import sample
 
+def update_block(block, ai_settings):
+	check_block_edge(block, ai_settings)
+	block.update()
+
+def check_block_edge(block, ai_settings):
+	if not block.drop:
+		if block.check_edges():
+			ai_settings.block_direction *= -1
 
 def check_reward_piggy_collision(shields, screen, ai_settings, piggy, rewards, score_board):
 	# check whether a reward has hit the piggy
@@ -22,12 +30,12 @@ def check_reward_piggy_collision(shields, screen, ai_settings, piggy, rewards, s
 	score_board.prep_shield()
 	score_board.prep_power_up()
 
-def check_key_down_event(event):
+def check_key_down_event(event, block):
 	# determine action when key is pushed down
 
 	if event.key == pygame.K_SPACE:
 		# drop a block
-		pass
+		block.drop = True
 	elif event.key == pygame.K_q:
 		# save high round and then quit
 		# record_high_round(stats.high_round, filename)
@@ -42,7 +50,7 @@ def check_key_down_event(event):
 	# 		pygame.mouse.set_visible(False)
 
 
-def check_events():
+def check_events(block):
 	# an event loop to monitor user's input (press key or move mouse)
 	# The one below checks whether user clicks to close the program.
 	for event in pygame.event.get():
@@ -52,7 +60,7 @@ def check_events():
 			sys.exit()
 		# check whether the event is a key press
 		elif event.type == pygame.KEYDOWN:
-			check_key_down_event(event)
+			check_key_down_event(event, block)
 
 		# check for mouseclick on play button
 		# elif event.type == pygame.MOUSEBUTTONDOWN:
@@ -99,22 +107,19 @@ def prep_scoreboard_images(score_board):
 	score_board.prep_power_up()
 	score_board.prep_shield()
 	
-def update_screen(ai_settings, screen, piggy, bullets, stats, play_button, rocks, rewards, shields, score_board):
+def update_screen(ai_settings, screen, block):
 	# redraw the scren during each pass of the loop
 	screen.fill(ai_settings.background_color)
-	# draw each bullet BEHIND the ship, so bullet drawn ahead of ship
-	for bullet in bullets.sprites():
-		bullet.draw_bullet()
-	piggy.blitme()
-	rocks.draw(screen)
-	rewards.draw(screen)
-	shields.draw(screen)
+
+	block.blitme()
+
+	
 	
 	# draw the play button only when game is inactive
-	if not stats.game_active:
-		play_button.draw_button()
+	# if not stats.game_active:
+	# 	play_button.draw_button()
 
-	score_board.show_score()
+	# score_board.show_score()
 
 	# display the most recently drawn screen.
 	pygame.display.flip()

@@ -13,7 +13,8 @@ class Block(Sprite):
 
 		# a flag indicating whether the block has been dropped
 		self.drop = False
-		
+		# record the number of block
+		self.number = 0
 		
 		self.x_speed = float(ai_settings.horizontal_speed)
 		self.y_speed = 0
@@ -47,6 +48,7 @@ class Block(Sprite):
 			self.y = 0
 		else:
 			# if block is dropped, it falls freely with regular g while maintaining the horizontal speed
+			# remember, everytime the program runs this script, it can be considered unit time (or dt)
 			self.y_speed += self.ai_settings.g
 			self.y += self.y_speed
 		

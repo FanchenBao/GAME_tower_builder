@@ -1,7 +1,6 @@
 import pygame
 from pygame.sprite import Group
 from settings import Settings
-from block import Block
 # from button import Button
 # from rock_stats import RockStats
 # from score_board import ScoreBoard
@@ -25,7 +24,9 @@ def run_game():
 
 	# stats = GameStats(ai_settings, filename)
 
-	block = Block(screen, ai_settings)
+	blocks = Group()
+	# create initial block
+	gf.create_block(blocks)
 	# bullets = Group()
 	
 	# rocks = Group()

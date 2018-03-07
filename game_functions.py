@@ -1,5 +1,6 @@
 import sys
 import pygame
+from block import Block
 # from bullet import Bullet
 # from rock import Rock
 # from reward_stats import RewardStats
@@ -9,14 +10,19 @@ import pygame
 # from time import clock
 # from random import sample
 
-def update_block(block, ai_settings):
-	check_block_edge(block, ai_settings)
-	block.update()
+def update_block(blocks, ai_settings):
+	check_block_edge(blocks, ai_settings)
+	blocks.update()
 
-def check_block_edge(block, ai_settings):
-	if not block.drop:
-		if block.check_edges():
-			ai_settings.block_direction *= -1
+def check_block_edge(blocks, ai_settings):
+	for block in blocks.sprites():
+		if not block.drop:
+			if block.check_edges():
+				ai_settings.block_direction *= -1
+
+def create_block(blocks):
+	block = Block(screen, ai_settings)
+	blocks.add(block)
 
 def check_reward_piggy_collision(shields, screen, ai_settings, piggy, rewards, score_board):
 	# check whether a reward has hit the piggy

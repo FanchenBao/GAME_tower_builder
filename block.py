@@ -4,7 +4,7 @@ from random import randint
 
 
 class Block(Sprite):
-	def __init__(self, screen, ai_settings, first_flag):
+	def __init__(self, screen, ai_settings, index):
 		super().__init__()
 		'''initialize block and determine its original position on screen'''
 		self.screen = screen
@@ -13,9 +13,21 @@ class Block(Sprite):
 
 		# a flag indicating whether the block has been dropped
 		self.drop = False
-		# the very first block has different behavior, needs to be flagged
-		self.first = first_flag
+
+		# determine the block's fulcrum position (left or right or none in terms of perfection match)
+		# and record fulcrum's x coordinate, except the first block
+		self.fulcrum_position = "none"
+		self.fulcrum_x = 0
+
+		# store the leverage of each block, except the first block
+		self.leverage = 0
 		
+		# flag indicating whether a built block has tipped over and ready to fall
+		self.fall = False
+
+		# indexing each block
+		self.index = index
+
 		self.x_speed = float(ai_settings.horizontal_speed)
 		self.y_speed = 0
 		#load the block image
@@ -25,7 +37,8 @@ class Block(Sprite):
 		self.rect = self.image.get_rect()
 		
 		# new block initial position (actual position is random)
-		self.rect.x = randint(0, self.screen_rect.right - self.rect.width)
+		# also avoid appearing too close to the edge, might result in bug
+		self.rect.x = randint(5, self.screen_rect.right - self.rect.width - 5)
 		self.rect.y = 0
 
 		# store a decimal value for rock's location for fine tuning position

@@ -28,7 +28,7 @@ def run_game():
 	new_blocks = Group()
 
 	# create initial block
-	gf.create_block(new_blocks, screen, ai_settings, True)
+	gf.create_block(new_blocks, screen, ai_settings, 1)
 	# bullets = Group()
 	
 	# rocks = Group()

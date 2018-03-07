@@ -7,6 +7,11 @@ class Settings():
 		# background needs to be light sky blue at the beginning
 		self.background_color = (135, 206, 250)
 
+		# the rect for block has an edge of a few pixels. this is to remove such edge
+		# for all the other blocks, such edge is set at 8 pixels. But the first block 
+		# only need to remove 5 pixels.
+		self.rect_correction = 8
+		self.first_block_rect_correction = 5
 		
 
 		self.initialize_dynamic_settings()

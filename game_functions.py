@@ -36,8 +36,8 @@ def check_first_block(block, new_blocks, built_blocks, screen, ai_settings):
 			# create a new FIRST block
 			create_block(new_blocks, screen, ai_settings, True)
 		else:
-			# if first block lands within the screen
-			block.rect.bottom = block.screen_rect.bottom
+			# if first block lands within the screen (the rect_correction for first block is only 5 pixels)
+			block.rect.bottom = block.screen_rect.bottom + ai_settings.first_block_rect_correction
 			exchange_block(block, new_blocks, built_blocks, screen, ai_settings)
 
 def check_other_block(block_top, new_blocks, built_blocks, screen, ai_settings):
@@ -56,11 +56,11 @@ def check_other_block(block_top, new_blocks, built_blocks, screen, ai_settings):
 				# to elimiate the situation where top block hit the side of the bottom block and still be considered a good hit
 				# 10 here is the error tolerance. If top block hit the side of botoom block within 10 pixels away from bottom block's top edge
 				# it will still counts as a hit
-				if block_top.rect.bottom > block.rect.top + 10:
+				if block_top.rect.bottom > block.rect.top + 15:
 					new_blocks.remove(block_top)
 					create_block(new_blocks, screen, ai_settings)
 					return
-			block_top.rect.bottom = block_bottom.rect.top
+			block_top.rect.bottom = block_bottom.rect.top + ai_settings.rect_correction
 			exchange_block(block_top, new_blocks, built_blocks, screen, ai_settings)
 	
 	elif block_top.rect.top >= block_top.screen_rect.bottom:

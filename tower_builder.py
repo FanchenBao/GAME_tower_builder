@@ -23,10 +23,12 @@ def run_game():
 	# filename = 'high_round.txt'
 
 	# stats = GameStats(ai_settings, filename)
+	# the blocks already built and the newly appeared blocks need two different groups
+	built_blocks = Group()
+	new_blocks = Group()
 
-	blocks = Group()
 	# create initial block
-	gf.create_block(blocks)
+	gf.create_block(new_blocks, screen, ai_settings, True)
 	# bullets = Group()
 	
 	# rocks = Group()
@@ -43,9 +45,9 @@ def run_game():
 	
 	# The main loop of the game
 	while True:
-		gf.check_events(block)
+		gf.check_events(new_blocks)
 		# if stats.game_active:
-		gf.update_block(block, ai_settings)
+		gf.update_block(new_blocks, built_blocks, screen, ai_settings)
 		# 	piggy.update()
 		# 	gf.fire_bullet(ai_settings, screen, piggy, bullets)
 		# 	gf.update_bullets(screen, ai_settings, rocks, bullets, rewards, stats, score_board)
@@ -62,6 +64,6 @@ def run_game():
 		# # msg2 = 'Press "P" to Play'
 		# # play_button = Button(screen, ai_settings, msg1, msg2)
 
-		gf.update_screen(ai_settings, screen, block)
+		gf.update_screen(ai_settings, screen, new_blocks, built_blocks)
 		
 run_game()

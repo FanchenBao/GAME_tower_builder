@@ -10,18 +10,79 @@ from block import Block
 # from time import clock
 # from random import sample
 
-def update_block(blocks, ai_settings):
-	check_block_edge(blocks, ai_settings)
-	blocks.update()
+def update_block(new_blocks, built_blocks, screen, ai_settings):
+	''' update block behavior'''
+	for block in new_blocks.copy():
+		# check block edges before it is released
+		check_block_edge(block, ai_settings)
+		# update block position
+		block.update()
+		# the following only happens when block is dropping
+		if block.drop:
+			if block.first:
+				# first block has different condition compared to the others
+				check_first_block(block, new_blocks, built_blocks, screen, ai_settings)
+			else:
+				check_other_block(block, new_blocks, built_blocks, screen, ai_settings)
+			
 
-def check_block_edge(blocks, ai_settings):
-	for block in blocks.sprites():
-		if not block.drop:
-			if block.check_edges():
-				ai_settings.block_direction *= -1
+def check_first_block(block, new_blocks, built_blocks, screen, ai_settings):
+	''' examine conditions of first block hitting the ground'''
+	if block.rect.bottom > block.screen_rect.bottom:
+		# if first block hit the ground and part of it is outside the screen, remove the block
+		if (block.rect.left < block.screen_rect.left or 
+			block.rect.right > block.screen_rect.right):
+			new_blocks.remove(block)
+			# create a new FIRST block
+			create_block(new_blocks, screen, ai_settings, True)
+		else:
+			# if first block lands within the screen
+			block.rect.bottom = block.screen_rect.bottom
+			exchange_block(block, new_blocks, built_blocks, screen, ai_settings)
 
-def create_block(blocks):
-	block = Block(screen, ai_settings)
+def check_other_block(block_top, new_blocks, built_blocks, screen, ai_settings):
+	''' examine conditions of non-first block dropping'''
+	# check for collision of the newly dropped block and the built blocks
+	block_bottom = pygame.sprite.spritecollideany(block_top, built_blocks)
+	if block_bottom:
+		# collision happens
+		if (block_top.rect.left < block_top.screen_rect.left or 
+			block_top.rect.right > block_top.screen_rect.right):
+			# top block doesn't land within the screen, then remove it
+			new_blocks.remove(block_top)
+			create_block(new_blocks, screen, ai_settings)
+		else:
+			for block in built_blocks.sprites():
+				# to elimiate the situation where top block hit the side of the bottom block and still be considered a good hit
+				# 10 here is the error tolerance. If top block hit the side of botoom block within 10 pixels away from bottom block's top edge
+				# it will still counts as a hit
+				if block_top.rect.bottom > block.rect.top + 10:
+					new_blocks.remove(block_top)
+					create_block(new_blocks, screen, ai_settings)
+					return
+			block_top.rect.bottom = block_bottom.rect.top
+			exchange_block(block_top, new_blocks, built_blocks, screen, ai_settings)
+	
+	elif block_top.rect.top >= block_top.screen_rect.bottom:
+		# collision doesn't happen. Remove the dropping block and create a new one
+		new_blocks.remove(block_top)
+		create_block(new_blocks, screen, ai_settings)
+
+def exchange_block(block, new_blocks, built_blocks, screen, ai_settings):
+	''' take the dropping block away from new_blocks and put into built_blocks'''
+	# remove it from the new blocks and add to built block
+	new_blocks.remove(block)
+	built_blocks.add(block)
+	# create a new non-FIRST block
+	create_block(new_blocks, screen, ai_settings)
+
+def check_block_edge(block, ai_settings):
+	if not block.drop:
+		if block.check_edges():
+			ai_settings.block_direction *= -1
+
+def create_block(blocks, screen, ai_settings, first_flag = False):
+	block = Block(screen, ai_settings, first_flag)
 	blocks.add(block)
 
 def check_reward_piggy_collision(shields, screen, ai_settings, piggy, rewards, score_board):
@@ -36,12 +97,13 @@ def check_reward_piggy_collision(shields, screen, ai_settings, piggy, rewards, s
 	score_board.prep_shield()
 	score_board.prep_power_up()
 
-def check_key_down_event(event, block):
+def check_key_down_event(event, new_blocks):
 	# determine action when key is pushed down
 
 	if event.key == pygame.K_SPACE:
 		# drop a block
-		block.drop = True
+		for block in new_blocks.sprites():
+			block.drop = True
 	elif event.key == pygame.K_q:
 		# save high round and then quit
 		# record_high_round(stats.high_round, filename)
@@ -56,7 +118,7 @@ def check_key_down_event(event, block):
 	# 		pygame.mouse.set_visible(False)
 
 
-def check_events(block):
+def check_events(new_blocks):
 	# an event loop to monitor user's input (press key or move mouse)
 	# The one below checks whether user clicks to close the program.
 	for event in pygame.event.get():
@@ -66,7 +128,7 @@ def check_events(block):
 			sys.exit()
 		# check whether the event is a key press
 		elif event.type == pygame.KEYDOWN:
-			check_key_down_event(event, block)
+			check_key_down_event(event, new_blocks)
 
 		# check for mouseclick on play button
 		# elif event.type == pygame.MOUSEBUTTONDOWN:
@@ -113,11 +175,12 @@ def prep_scoreboard_images(score_board):
 	score_board.prep_power_up()
 	score_board.prep_shield()
 	
-def update_screen(ai_settings, screen, block):
+def update_screen(ai_settings, screen, new_blocks, built_blocks):
 	# redraw the scren during each pass of the loop
 	screen.fill(ai_settings.background_color)
 
-	block.blitme()
+	new_blocks.draw(screen)
+	built_blocks.draw(screen)
 
 	
 	

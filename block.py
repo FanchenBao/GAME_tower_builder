@@ -4,7 +4,7 @@ from random import randint
 
 
 class Block(Sprite):
-	def __init__(self, screen, ai_settings):
+	def __init__(self, screen, ai_settings, first_flag):
 		super().__init__()
 		'''initialize block and determine its original position on screen'''
 		self.screen = screen
@@ -13,8 +13,8 @@ class Block(Sprite):
 
 		# a flag indicating whether the block has been dropped
 		self.drop = False
-		# record the number of block
-		self.number = 0
+		# the very first block has different behavior, needs to be flagged
+		self.first = first_flag
 		
 		self.x_speed = float(ai_settings.horizontal_speed)
 		self.y_speed = 0

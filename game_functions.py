@@ -220,19 +220,7 @@ def create_block(blocks, screen, ai_settings, index):
 	block = Block(screen, ai_settings, index)
 	blocks.add(block)
 
-def check_reward_piggy_collision(shields, screen, ai_settings, piggy, rewards, score_board):
-	# check whether a reward has hit the piggy
-	# record the reward
-	reward = pygame.sprite.spritecollideany(piggy, rewards)
-	if reward:
-		check_offensive_reward(reward.reward_flag, ai_settings)
-		check_defensive_reward(reward.reward_flag, shields, screen, ai_settings, piggy)
-		# remove the reward that has hit the ship
-		rewards.remove(reward)
-	score_board.prep_shield()
-	score_board.prep_power_up()
-
-def check_key_down_event(event, new_blocks):
+def check_key_down_event(event, stats, ai_settings, new_blocks, built_blocks, screen):
 	# determine action when key is pushed down
 
 	if event.key == pygame.K_SPACE:
@@ -245,15 +233,15 @@ def check_key_down_event(event, new_blocks):
 		sys.exit()
 
 	# press "P" to play the game	
-	# elif event.key == pygame.K_p:
-	# 	if not stats.game_active:
-	# 	 	# restart or start a new game
-	# 		game_restart(stats, piggy, rocks, bullets, screen, ai_settings, rock_stats, shields, rewards, score_board, filename)
-	# 		# hide the mouse cursor
-	# 		pygame.mouse.set_visible(False)
+	elif event.key == pygame.K_p:
+		if not stats.game_active:
+		 	# restart or start a new game
+			game_restart(stats, ai_settings, new_blocks, built_blocks, screen)
+			# hide the mouse cursor
+			pygame.mouse.set_visible(False)
 
 
-def check_events(new_blocks):
+def check_events(stats, ai_settings, new_blocks, built_blocks, screen):
 	# an event loop to monitor user's input (press key or move mouse)
 	# The one below checks whether user clicks to close the program.
 	for event in pygame.event.get():
@@ -263,7 +251,7 @@ def check_events(new_blocks):
 			sys.exit()
 		# check whether the event is a key press
 		elif event.type == pygame.KEYDOWN:
-			check_key_down_event(event, new_blocks)
+			check_key_down_event(event, stats, ai_settings, new_blocks, built_blocks, screen)
 
 		# check for mouseclick on play button
 		# elif event.type == pygame.MOUSEBUTTONDOWN:
@@ -276,32 +264,25 @@ def record_high_round(high_round, filename):
 	with open(filename, 'w') as file_object:
 		file_object.write(str_high_round)
 
-def game_restart(stats, piggy, rocks, bullets, screen, ai_settings, rock_stats, shields, rewards, score_board, filename):
+def game_restart(stats, ai_settings, new_blocks, built_blocks, screen):
 	# restart the game by resetting stats and clearing out remnants of previous game
 	stats.game_active = True
+
+	# reset all the stats
+	stats.reset_stats()
+	ai_settings.initialize_dynamic_settings()
+
+	# # reset all the scoreboard images
+	# prep_scoreboard_images(score_board)
+
+	# empty out all blocks
+	new_blocks.empty()
+	built_blocks.empty()
+
+	# create new first block
+	create_block(new_blocks, screen, ai_settings, 1)
 	
-	if stats.piggy_hit:
-		# reset all the stats
-		stats.reset_stats()
-		ai_settings.reset_reward_settings()
-		ai_settings.initialize_dynamic_settings()
-
-		# reset all the scoreboard images
-		prep_scoreboard_images(score_board)
-
-		# empty out any remaining rocks, bullets, shields
-		rocks.empty()
-		bullets.empty()
-		shields.empty()
-		rewards.empty()
-
-		# create new rocks
-		create_initial_rocks(screen, ai_settings, rock_stats, rocks)
-		
-		#reposition piggy to right center position
-		piggy.center_x = piggy.screen_rect.right - piggy.rect.width / 2
-		piggy.center_y = piggy.screen_rect.centery
-
+	
 def prep_scoreboard_images(score_board):
 	score_board.prep_score()
 	score_board.prep_target_score()
@@ -319,9 +300,9 @@ def update_screen(ai_settings, screen, new_blocks, built_blocks):
 
 	
 	
-	# draw the play button only when game is inactive
-	# if not stats.game_active:
-	# 	play_button.draw_button()
+	draw the play button only when game is inactive
+	if not stats.game_active:
+		play_button.draw_button()
 
 	# score_board.show_score()
 

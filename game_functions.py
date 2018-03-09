@@ -10,7 +10,7 @@ from block import Block
 # from time import clock
 # from random import sample
 
-def update_block(new_blocks, built_blocks, screen, ai_settings):
+def update_block(new_blocks, built_blocks, screen, ai_settings, stats, score_board):
 	''' update block behavior'''
 	for block in new_blocks.copy():
 		# check block edges before it is released
@@ -21,15 +21,15 @@ def update_block(new_blocks, built_blocks, screen, ai_settings):
 		if block.drop:
 			if block.index == 1:
 				# first block has different condition compared to the others
-				check_first_block(block, new_blocks, built_blocks, screen, ai_settings)
+				check_first_block(block, new_blocks, built_blocks, screen, ai_settings, stats, score_board)
 			else:
-				check_other_block(block, new_blocks, built_blocks, screen, ai_settings)
+				check_other_block(block, new_blocks, built_blocks, screen, ai_settings, stats, score_board)
 
 	# move the built blocks down to maintain at most 5 blocks on screen
 	adjust_block_position(ai_settings, built_blocks)
 			
 
-def check_first_block(block, new_blocks, built_blocks, screen, ai_settings):
+def check_first_block(block, new_blocks, built_blocks, screen, ai_settings, stats, score_board):
 	''' examine conditions of first block hitting the ground'''
 	if block.rect.bottom > block.screen_rect.bottom:
 		# if first block hit the ground and part of it is outside the screen, remove the block
@@ -44,10 +44,13 @@ def check_first_block(block, new_blocks, built_blocks, screen, ai_settings):
 			# remove it from the new blocks and add to built block
 			new_blocks.remove(block)
 			built_blocks.add(block)
+			
+			show_current_and_max_block_number(stats, built_blocks, score_board)
+			
 			# create the first non-FIRST block
 			create_block(new_blocks, screen, ai_settings, (len(built_blocks) + 1))
 
-def check_other_block(block_top, new_blocks, built_blocks, screen, ai_settings):
+def check_other_block(block_top, new_blocks, built_blocks, screen, ai_settings, stats, score_board):
 	''' examine conditions of non-first block dropping'''
 	# check for collision of the newly dropped block and the built blocks
 	block_bottom = pygame.sprite.spritecollideany(block_top, built_blocks)
@@ -68,6 +71,7 @@ def check_other_block(block_top, new_blocks, built_blocks, screen, ai_settings):
 					new_blocks.remove(block_top)
 					create_block(new_blocks, screen, ai_settings, (len(built_blocks) + 1))
 					return
+			
 			# position block_top on top of block_bottom with rect correction
 			block_top.rect.bottom = block_bottom.rect.top + ai_settings.rect_correction
 			
@@ -92,6 +96,8 @@ def check_other_block(block_top, new_blocks, built_blocks, screen, ai_settings):
 				# remove the built blocks that are falling
 				remove_falling_block(built_blocks)
 
+				show_current_and_max_block_number(stats, built_blocks, score_board)
+
 				# create new block
 				create_block(new_blocks, screen, ai_settings, (len(built_blocks) + 1))
 			
@@ -101,35 +107,58 @@ def check_other_block(block_top, new_blocks, built_blocks, screen, ai_settings):
 		new_blocks.remove(block_top)
 		create_block(new_blocks, screen, ai_settings, (len(built_blocks) + 1))
 
+def show_current_and_max_block_number(stats, built_blocks, score_board):
+	# record current number of built blocks
+	stats.number_block = len(built_blocks)
+	# set new record in max block if necessary
+	if stats.number_block > stats.max_block:
+		stats.max_block = stats.number_block
+
+	score_board.prep_block()
+	score_board.prep_max_block()
+
 def adjust_block_position(ai_settings, built_blocks):
 	''' move built blocks down ONE block when there are more than 5 blocks on screen'''
+	# create a list of all built blocks' indeces
 	list_of_blocks = []
 	for block in built_blocks.sprites():
 		list_of_blocks.append(block.index)
 	
+	# find the top block and adjust block position based on it
 	get_top_block(list_of_blocks, built_blocks, ai_settings)
 	
 def get_top_block(list_of_blocks, built_blocks, ai_settings):
-	# block_top = Block(screen, ai_settings, 0)
+	'''find top block and adjust block positions'''
 	if list_of_blocks:
 		top_index = max(list_of_blocks)
 		for block in built_blocks.sprites():
+			# locate block_top
 			if block.index == top_index:
 				move_block_down(block, built_blocks, ai_settings)
 				move_block_up(block, built_blocks, ai_settings)
 				return
 
 def move_block_down(block_top, built_blocks, ai_settings):
+	# move blocks down if there are more than max blocks on screen
 	if ((block_top.screen_rect.bottom - block_top.rect.top) > 
 		ai_settings.max_blocks_on_screen * block_top.rect.height):
 		for block in built_blocks.sprites():
 			block.rect.bottom += ai_settings.block_adjust_speed
 
 def move_block_up(block_top, built_blocks, ai_settings):
-	if ((block_top.screen_rect.bottom - block_top.rect.top) < 
-		(block_top.rect.height - ai_settings.first_block_rect_correction)):
-		for block in built_blocks.sprites():
-			block.rect.bottom -= ai_settings.block_adjust_speed
+	# move blocks up if there are less than minimum blocks on screen
+	# when there are more than min blocks required on screen, show only the min number of blocks
+	if len(built_blocks) >= ai_settings.min_blocks_on_screen:
+		if ((block_top.screen_rect.bottom - block_top.rect.top) < 
+			ai_settings.min_blocks_on_screen * (block_top.rect.height - ai_settings.rect_correction)):
+			for block in built_blocks.sprites():
+				block.rect.bottom -= ai_settings.block_adjust_speed * 3
+	# when there are fewer than min blocks requried on screen, show all blocks
+	else:
+		if ((block_top.screen_rect.bottom - block_top.rect.top) < 
+			len(built_blocks) * (block_top.rect.height - ai_settings.rect_correction)):
+			for block in built_blocks.sprites():
+				block.rect.bottom -= ai_settings.block_adjust_speed * 3
 
 
 def check_falling_block_top(block_top, new_blocks, built_blocks, screen, ai_settings):
@@ -229,7 +258,7 @@ def check_key_down_event(event, stats, ai_settings, new_blocks, built_blocks, sc
 			block.drop = True
 	elif event.key == pygame.K_q:
 		# save high round and then quit
-		record_high_level(stats.high_level, filename)
+		record_max_block(stats.max_block, filename)
 		sys.exit()
 
 	# press "P" to play the game	
@@ -247,7 +276,7 @@ def check_events(stats, ai_settings, new_blocks, built_blocks, screen, filename)
 	for event in pygame.event.get():
 		if event.type == pygame.QUIT:
 			# save high score and then quit
-			record_high_level(stats.high_level, filename)
+			record_max_block(stats.max_block, filename)
 			sys.exit()
 		# check whether the event is a key press
 		elif event.type == pygame.KEYDOWN:
@@ -258,11 +287,11 @@ def check_events(stats, ai_settings, new_blocks, built_blocks, screen, filename)
 		# 	mouse_x, mouse_y = pygame.mouse.get_pos()
 		# 	check_play_button(play_button, stats, mouse_x, mouse_y, aliens, bullets, screen, ai_settings, ship)
 
-def record_high_level(high_level, filename):
+def record_max_block(max_block, filename):
 	'''record high level in a separate file so that each new game starts with a previous high level'''
-	str_high_level = str(high_level)
+	str_max_block = str(max_block)
 	with open(filename, 'w') as file_object:
-		file_object.write(str_high_level)
+		file_object.write(str_max_block)
 
 def game_restart(stats, ai_settings, new_blocks, built_blocks, screen):
 	# restart the game by resetting stats and clearing out remnants of previous game
@@ -291,7 +320,7 @@ def prep_scoreboard_images(score_board):
 	score_board.prep_power_up()
 	score_board.prep_shield()
 	
-def update_screen(ai_settings, screen, new_blocks, built_blocks, stats, play_button):
+def update_screen(ai_settings, screen, new_blocks, built_blocks, stats, play_button, score_board):
 	# redraw the scren during each pass of the loop
 	screen.fill(ai_settings.background_color)
 
@@ -304,7 +333,7 @@ def update_screen(ai_settings, screen, new_blocks, built_blocks, stats, play_but
 	if not stats.game_active:
 		play_button.draw_button()
 
-	# score_board.show_score()
+	score_board.show_score()
 
 	# display the most recently drawn screen.
 	pygame.display.flip()

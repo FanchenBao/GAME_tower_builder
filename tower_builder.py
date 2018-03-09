@@ -3,7 +3,7 @@ from pygame.sprite import Group
 from settings import Settings
 from button import Button
 # from rock_stats import RockStats
-# from score_board import ScoreBoard
+from score_board import ScoreBoard
 import game_functions as gf
 from game_stats import GameStats
 # from time import clock
@@ -20,7 +20,7 @@ def run_game():
 	pygame.display.set_caption("Tower Builder")
 
 	# create an instance to store game stats
-	filename = 'high_level.txt'
+	filename = 'max_block.txt'
 	stats = GameStats(ai_settings, filename)
 	
 	# the blocks already built and the newly appeared blocks need two different groups
@@ -37,7 +37,7 @@ def run_game():
 
 	
 
-	# score_board = ScoreBoard(screen, ai_settings, stats)
+	score_board = ScoreBoard(screen, ai_settings, stats)
 	
 	# gf.create_initial_rocks(screen, ai_settings, rock_stats, rocks)
 	
@@ -45,7 +45,7 @@ def run_game():
 	while True:
 		gf.check_events(stats, ai_settings, new_blocks, built_blocks, screen, filename)
 		if stats.game_active:
-			gf.update_block(new_blocks, built_blocks, screen, ai_settings)
+			gf.update_block(new_blocks, built_blocks, screen, ai_settings, stats, score_board)
 		# 	piggy.update()
 		# 	gf.fire_bullet(ai_settings, screen, piggy, bullets)
 		# 	gf.update_bullets(screen, ai_settings, rocks, bullets, rewards, stats, score_board)
@@ -63,6 +63,6 @@ def run_game():
 			msg2 = 'Press "Q" to Quit'
 			play_button = Button(screen, ai_settings, msg1, msg2)
 
-		gf.update_screen(ai_settings, screen, new_blocks, built_blocks, stats, play_button)
+		gf.update_screen(ai_settings, screen, new_blocks, built_blocks, stats, play_button, score_board)
 		
 run_game()

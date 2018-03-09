@@ -13,8 +13,9 @@ class Settings():
 		self.rect_correction = 8
 		self.first_block_rect_correction = 5
 
-		# max number of blocks visible on screen
+		# max and min number of blocks visible on screen
 		self.max_blocks_on_screen = 5
+		self.min_blocks_on_screen = 3
 
 		# speed in which built blocks move down to exit screen
 		self.block_adjust_speed = 1

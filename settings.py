@@ -3,7 +3,7 @@ class Settings():
 	def __init__(self):
 		''' the static settings'''
 		self.screen_height = 750
-		self.screen_width = 600
+		self.screen_width = 700
 		# background needs to be light sky blue at the beginning
 		self.background_color = (135, 206, 250)
 
@@ -12,6 +12,12 @@ class Settings():
 		# only need to remove 5 pixels.
 		self.rect_correction = 8
 		self.first_block_rect_correction = 5
+
+		# max number of blocks visible on screen
+		self.max_blocks_on_screen = 5
+
+		# speed in which built blocks move down to exit screen
+		self.block_adjust_speed = 1
 		
 
 		self.initialize_dynamic_settings()
@@ -24,5 +30,5 @@ class Settings():
 		# before release, if block hit the left-right edge, change its direction
 		self.block_direction = 1
 		# gravity
-		self.g = 0.2
+		self.g = 0.3
 		

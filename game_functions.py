@@ -24,6 +24,9 @@ def update_block(new_blocks, built_blocks, screen, ai_settings):
 				check_first_block(block, new_blocks, built_blocks, screen, ai_settings)
 			else:
 				check_other_block(block, new_blocks, built_blocks, screen, ai_settings)
+
+	# move the built blocks down to maintain at most 5 blocks on screen
+	adjust_block_position(ai_settings, built_blocks)
 			
 
 def check_first_block(block, new_blocks, built_blocks, screen, ai_settings):
@@ -98,6 +101,37 @@ def check_other_block(block_top, new_blocks, built_blocks, screen, ai_settings):
 		new_blocks.remove(block_top)
 		create_block(new_blocks, screen, ai_settings, (len(built_blocks) + 1))
 
+def adjust_block_position(ai_settings, built_blocks):
+	''' move built blocks down ONE block when there are more than 5 blocks on screen'''
+	list_of_blocks = []
+	for block in built_blocks.sprites():
+		list_of_blocks.append(block.index)
+	
+	get_top_block(list_of_blocks, built_blocks, ai_settings)
+	
+def get_top_block(list_of_blocks, built_blocks, ai_settings):
+	# block_top = Block(screen, ai_settings, 0)
+	if list_of_blocks:
+		top_index = max(list_of_blocks)
+		for block in built_blocks.sprites():
+			if block.index == top_index:
+				move_block_down(block, built_blocks, ai_settings)
+				move_block_up(block, built_blocks, ai_settings)
+				return
+
+def move_block_down(block_top, built_blocks, ai_settings):
+	if ((block_top.screen_rect.bottom - block_top.rect.top) > 
+		ai_settings.max_blocks_on_screen * block_top.rect.height):
+		for block in built_blocks.sprites():
+			block.rect.bottom += ai_settings.block_adjust_speed
+
+def move_block_up(block_top, built_blocks, ai_settings):
+	if ((block_top.screen_rect.bottom - block_top.rect.top) < 
+		(block_top.rect.height - ai_settings.first_block_rect_correction)):
+		for block in built_blocks.sprites():
+			block.rect.bottom -= ai_settings.block_adjust_speed
+
+
 def check_falling_block_top(block_top, new_blocks, built_blocks, screen, ai_settings):
 	''' check whether block top can stand. If it cannot, no need to update leverage of the built blocks
 	and a new block will be generated'''
@@ -127,7 +161,6 @@ def check_falling_block(built_blocks):
 	# a list to record all the falling blocks
 	list_of_falls = []
 	for block in built_blocks.sprites():
-		print(block.index, block.leverage)
 		if block.index != 1:
 			if block.fulcrum_position == "left" or block.fulcrum_position == "none":
 				if block.leverage >= 0:

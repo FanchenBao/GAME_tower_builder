@@ -220,7 +220,7 @@ def create_block(blocks, screen, ai_settings, index):
 	block = Block(screen, ai_settings, index)
 	blocks.add(block)
 
-def check_key_down_event(event, stats, ai_settings, new_blocks, built_blocks, screen):
+def check_key_down_event(event, stats, ai_settings, new_blocks, built_blocks, screen, filename):
 	# determine action when key is pushed down
 
 	if event.key == pygame.K_SPACE:
@@ -229,7 +229,7 @@ def check_key_down_event(event, stats, ai_settings, new_blocks, built_blocks, sc
 			block.drop = True
 	elif event.key == pygame.K_q:
 		# save high round and then quit
-		# record_high_round(stats.high_round, filename)
+		record_high_level(stats.high_level, filename)
 		sys.exit()
 
 	# press "P" to play the game	
@@ -241,28 +241,28 @@ def check_key_down_event(event, stats, ai_settings, new_blocks, built_blocks, sc
 			pygame.mouse.set_visible(False)
 
 
-def check_events(stats, ai_settings, new_blocks, built_blocks, screen):
+def check_events(stats, ai_settings, new_blocks, built_blocks, screen, filename):
 	# an event loop to monitor user's input (press key or move mouse)
 	# The one below checks whether user clicks to close the program.
 	for event in pygame.event.get():
 		if event.type == pygame.QUIT:
 			# save high score and then quit
-			# record_high_score(stats.high_score, filename)
+			record_high_level(stats.high_level, filename)
 			sys.exit()
 		# check whether the event is a key press
 		elif event.type == pygame.KEYDOWN:
-			check_key_down_event(event, stats, ai_settings, new_blocks, built_blocks, screen)
+			check_key_down_event(event, stats, ai_settings, new_blocks, built_blocks, screen, filename)
 
 		# check for mouseclick on play button
 		# elif event.type == pygame.MOUSEBUTTONDOWN:
 		# 	mouse_x, mouse_y = pygame.mouse.get_pos()
 		# 	check_play_button(play_button, stats, mouse_x, mouse_y, aliens, bullets, screen, ai_settings, ship)
 
-def record_high_round(high_round, filename):
-	'''record high round in a separate file so that each new game starts with a previous high score'''
-	str_high_round = str(high_round)
+def record_high_level(high_level, filename):
+	'''record high level in a separate file so that each new game starts with a previous high level'''
+	str_high_level = str(high_level)
 	with open(filename, 'w') as file_object:
-		file_object.write(str_high_round)
+		file_object.write(str_high_level)
 
 def game_restart(stats, ai_settings, new_blocks, built_blocks, screen):
 	# restart the game by resetting stats and clearing out remnants of previous game
@@ -291,7 +291,7 @@ def prep_scoreboard_images(score_board):
 	score_board.prep_power_up()
 	score_board.prep_shield()
 	
-def update_screen(ai_settings, screen, new_blocks, built_blocks):
+def update_screen(ai_settings, screen, new_blocks, built_blocks, stats, play_button):
 	# redraw the scren during each pass of the loop
 	screen.fill(ai_settings.background_color)
 
@@ -300,7 +300,7 @@ def update_screen(ai_settings, screen, new_blocks, built_blocks):
 
 	
 	
-	draw the play button only when game is inactive
+	# draw the play button only when game is inactive
 	if not stats.game_active:
 		play_button.draw_button()
 

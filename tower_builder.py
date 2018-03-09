@@ -19,10 +19,10 @@ def run_game():
 	screen = pygame.display.set_mode((ai_settings.screen_width, ai_settings.screen_height))
 	pygame.display.set_caption("Tower Builder")
 
-	# # create an instance to store game stats
-	# filename = 'high_round.txt'
-
+	# create an instance to store game stats
+	filename = 'high_level.txt'
 	stats = GameStats(ai_settings, filename)
+	
 	# the blocks already built and the newly appeared blocks need two different groups
 	built_blocks = Group()
 	new_blocks = Group()
@@ -43,7 +43,7 @@ def run_game():
 	
 	# The main loop of the game
 	while True:
-		gf.check_events(stats, ai_settings, new_blocks, built_blocks, screen)
+		gf.check_events(stats, ai_settings, new_blocks, built_blocks, screen, filename)
 		if stats.game_active:
 			gf.update_block(new_blocks, built_blocks, screen, ai_settings)
 		# 	piggy.update()
@@ -63,6 +63,6 @@ def run_game():
 			msg2 = 'Press "Q" to Quit'
 			play_button = Button(screen, ai_settings, msg1, msg2)
 
-		gf.update_screen(ai_settings, screen, new_blocks, built_blocks)
+		gf.update_screen(ai_settings, screen, new_blocks, built_blocks, stats, play_button)
 		
 run_game()

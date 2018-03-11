@@ -20,7 +20,6 @@ class Settings():
 		# speed in which built blocks move down to exit screen
 		self.block_adjust_speed = 1
 		
-
 		self.initialize_dynamic_settings()
 		
 
@@ -32,4 +31,11 @@ class Settings():
 		self.block_direction = 1
 		# gravity
 		self.g = 0.3
+
+		# the scoring system. Score refers to each successful building attempt
+		self.perfect_score = 100
+		self.good_score = 10
+		self.fair_score = 5
+		# points refer to the value of each block
+		self.block_points = 500
 		

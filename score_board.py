@@ -17,21 +17,33 @@ class ScoreBoard():
 		self.font = pygame.font.SysFont(None, 28)
 
 		# draw score information on the screen
-		# self.prep_score()
+		self.prep_score()
 		self.prep_block()
 		self.prep_max_block()
+		self.prep_high_score()
 
-	# def prep_score(self):
-	# 	''' convert score information into image'''
-	# 	# round the score to the nearest 10 (if the second argument is 1, that means to ronud to nearest 0.1)
-	# 	rounded_score = round(self.stats.score, -1)
-	# 	# syntax to insert comma to long number
-	# 	score_str = "Score: " + "{:,}".format(rounded_score)
-	# 	self.score_image = self.font.render(score_str, True, self.text_color, 
-	# 		self.ai_settings.background_color)
-	# 	self.score_image_rect = self.score_image.get_rect()
-	# 	self.score_image_rect.centerx = self.screen_rect.centerx
-	# 	self.score_image_rect.top = 10
+	def prep_score(self):
+		''' convert score information into image'''
+		# round the score to the nearest 10 (if the second argument is 1, that means to ronud to nearest 0.1)
+		rounded_score = round(self.stats.score, -1)
+		# syntax to insert comma to long number
+		score_str = "Score: " + "{:,}".format(rounded_score)
+		self.score_image = self.font.render(score_str, True, self.text_color, 
+			self.ai_settings.background_color)
+		self.score_image_rect = self.score_image.get_rect()
+		self.score_image_rect.left = 5
+		self.score_image_rect.centery = self.screen_rect.centery + 20
+
+	def prep_high_score(self):
+		''' convert score information into image'''
+		rounded_score = round(self.stats.high_score, -1)
+		# syntax to insert comma to long number
+		high_score_str = "High Score: " + "{:,}".format(rounded_score)
+		self.high_score_image = self.font.render(high_score_str, True, self.text_color, 
+			self.ai_settings.background_color)
+		self.high_score_image_rect = self.high_score_image.get_rect()
+		self.high_score_image_rect.left = 5
+		self.high_score_image_rect.centery = self.screen_rect.centery + 40
 
 	def prep_block(self):
 		''' convert maximum blocks achieved into image'''
@@ -40,7 +52,7 @@ class ScoreBoard():
 			self.ai_settings.background_color)
 		self.block_image_rect = self.block_image.get_rect()
 		self.block_image_rect.left = 5
-		self.block_image_rect.centery = self.screen_rect.centery - 20
+		self.block_image_rect.centery = self.screen_rect.centery - 40
 
 	def prep_max_block(self):
 		''' convert maximum blocks achieved into image'''
@@ -49,10 +61,12 @@ class ScoreBoard():
 			self.ai_settings.background_color)
 		self.max_block_image_rect = self.max_block_image.get_rect()
 		self.max_block_image_rect.left = 5
-		self.max_block_image_rect.centery = self.screen_rect.centery + 20
+		self.max_block_image_rect.centery = self.screen_rect.centery - 20
 
 	def show_score(self):
 		''' draw score information on the screen'''
 		# self.screen.blit(self.score_image, self.score_image_rect)
 		self.screen.blit(self.block_image, self.block_image_rect)
 		self.screen.blit(self.max_block_image, self.max_block_image_rect)
+		self.screen.blit(self.score_image, self.score_image_rect)
+		self.screen.blit(self.high_score_image, self.high_score_image_rect)

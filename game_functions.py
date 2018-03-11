@@ -1,14 +1,6 @@
 import sys
 import pygame
 from block import Block
-# from bullet import Bullet
-# from rock import Rock
-# from reward_stats import RewardStats
-# from reward import Reward
-# from missile import Missile
-# from shield import Shield
-# from time import clock
-# from random import sample
 
 def update_block(new_blocks, built_blocks, screen, ai_settings, stats, score_board):
 	''' update block behavior'''
@@ -46,9 +38,31 @@ def check_first_block(block, new_blocks, built_blocks, screen, ai_settings, stat
 			built_blocks.add(block)
 			
 			show_current_and_max_block_number(stats, built_blocks, score_board)
-			
+
+			# calculate score
+			calculate_first_block_score(block, ai_settings, stats, score_board)
+
 			# create the first non-FIRST block
 			create_block(new_blocks, screen, ai_settings, (len(built_blocks) + 1))
+
+def calculate_first_block_score(block, ai_settings, stats, score_board):
+	''' calculate score for first block under different conditions'''
+	if block.rect.centerx == block.screen_rect.centerx:
+		stats.score += ai_settings.perfect_score
+	elif block.rect.centerx > block.screen_rect.width / 4 and block.rect.centerx < block.screen_rect.width / 2:
+		stats.score += ai_settings.good_score
+	elif block.rect.centerx > block.screen_rect.width / 2 and block.rect.centerx < block.screen_rect.width * (3/4):
+		stats.score += ai_settings.good_score
+	elif block.rect.centerx <= block.screen_rect.width / 4:
+		stats.score += ai_settings.fair_score
+	elif block.rect.centerx >= block.screen_rect.width * (3/4):
+		stats.score += ai_settings.fair_score
+	score_board.prep_score()
+	# update high score
+	if stats.score > stats.high_score:
+		stats.high_score = stats.score
+		score_board.prep_high_score()
+
 
 def check_other_block(block_top, new_blocks, built_blocks, screen, ai_settings, stats, score_board):
 	''' examine conditions of non-first block dropping'''
@@ -83,6 +97,9 @@ def check_other_block(block_top, new_blocks, built_blocks, screen, ai_settings, 
 			if not block_top.fall:
 				# the remaining procedures only make sense when block_top stands
 				
+				# block top not falling, so calculate its score
+				calculate_block_top_score(block_top, ai_settings, stats, score_board)
+
 				# calculate leverage of each built block underneath
 				find_leverage(block_top, built_blocks)
 
@@ -93,8 +110,8 @@ def check_other_block(block_top, new_blocks, built_blocks, screen, ai_settings, 
 				# check each built block's leverage to find any that has tipped
 				check_falling_block(built_blocks)
 
-				# remove the built blocks that are falling
-				remove_falling_block(built_blocks)
+				# remove the built blocks that are falling, and update score
+				remove_falling_block(built_blocks, stats, ai_settings, score_board)
 
 				show_current_and_max_block_number(stats, built_blocks, score_board)
 
@@ -106,6 +123,20 @@ def check_other_block(block_top, new_blocks, built_blocks, screen, ai_settings, 
 		# collision doesn't happen. Remove the dropping block and create a new one
 		new_blocks.remove(block_top)
 		create_block(new_blocks, screen, ai_settings, (len(built_blocks) + 1))
+
+def calculate_block_top_score(block_top, ai_settings, stats, score_board):
+	''' calculate the score of block top'''
+	if block_top.fulcrum_position == "none":
+		# use perfect score when it's a perfect landing
+		stats.score += abs(block_top.leverage) * ai_settings.perfect_score
+	else:
+		stats.score += abs(block_top.leverage) * ai_settings.good_score
+
+	score_board.prep_score()
+	# update high score
+	if stats.score > stats.high_score:
+		stats.high_score = stats.score
+		score_board.prep_high_score()
 
 def show_current_and_max_block_number(stats, built_blocks, score_board):
 	# record current number of built blocks
@@ -179,11 +210,19 @@ def check_falling_block_top(block_top, new_blocks, built_blocks, screen, ai_sett
 			new_blocks.remove(block_top)
 			create_block(new_blocks, screen, ai_settings, (len(built_blocks) + 1))
 
-def remove_falling_block(built_blocks):
+def remove_falling_block(built_blocks, stats, ai_settings, score_board):
 	''' remove the built block that has the fall flag as True.'''
 	for block in built_blocks.copy():
 		if block.fall:
 			built_blocks.remove(block)
+			# update score, decrease the block points for each removed block
+			stats.score -= ai_settings.block_points
+
+	score_board.prep_score()
+	# update high score
+	if stats.score > stats.high_score:
+		stats.high_score = stats.score
+		score_board.prep_high_score()
 
 def check_falling_block(built_blocks):
 	''' check each block in built_blocks for its leverage and determine whether it is falling'''
@@ -249,7 +288,7 @@ def create_block(blocks, screen, ai_settings, index):
 	block = Block(screen, ai_settings, index)
 	blocks.add(block)
 
-def check_key_down_event(event, stats, ai_settings, new_blocks, built_blocks, screen, filename):
+def check_key_down_event(event, stats, ai_settings, new_blocks, built_blocks, screen, filename_block, filename_score):
 	# determine action when key is pushed down
 
 	if event.key == pygame.K_SPACE:
@@ -257,8 +296,9 @@ def check_key_down_event(event, stats, ai_settings, new_blocks, built_blocks, sc
 		for block in new_blocks.sprites():
 			block.drop = True
 	elif event.key == pygame.K_q:
-		# save high round and then quit
-		record_max_block(stats.max_block, filename)
+		# save high score and max block and then quit
+		record_achievement(stats.max_block, filename_block)
+		record_achievement(stats.high_score, filename_score)
 		sys.exit()
 
 	# press "P" to play the game	
@@ -270,28 +310,29 @@ def check_key_down_event(event, stats, ai_settings, new_blocks, built_blocks, sc
 			pygame.mouse.set_visible(False)
 
 
-def check_events(stats, ai_settings, new_blocks, built_blocks, screen, filename):
+def check_events(stats, ai_settings, new_blocks, built_blocks, screen, filename_block, filename_score):
 	# an event loop to monitor user's input (press key or move mouse)
 	# The one below checks whether user clicks to close the program.
 	for event in pygame.event.get():
 		if event.type == pygame.QUIT:
 			# save high score and then quit
-			record_max_block(stats.max_block, filename)
+			record_achievement(stats.max_block, filename_block)
+			record_achievement(stats.high_score, filename_score)
 			sys.exit()
 		# check whether the event is a key press
 		elif event.type == pygame.KEYDOWN:
-			check_key_down_event(event, stats, ai_settings, new_blocks, built_blocks, screen, filename)
+			check_key_down_event(event, stats, ai_settings, new_blocks, built_blocks, screen, filename_block, filename_score)
 
 		# check for mouseclick on play button
 		# elif event.type == pygame.MOUSEBUTTONDOWN:
 		# 	mouse_x, mouse_y = pygame.mouse.get_pos()
 		# 	check_play_button(play_button, stats, mouse_x, mouse_y, aliens, bullets, screen, ai_settings, ship)
 
-def record_max_block(max_block, filename):
+def record_achievement(achievement, filename):
 	'''record high level in a separate file so that each new game starts with a previous high level'''
-	str_max_block = str(max_block)
+	str_achievement = str(achievement)
 	with open(filename, 'w') as file_object:
-		file_object.write(str_max_block)
+		file_object.write(str_achievement)
 
 def game_restart(stats, ai_settings, new_blocks, built_blocks, screen):
 	# restart the game by resetting stats and clearing out remnants of previous game
@@ -311,14 +352,6 @@ def game_restart(stats, ai_settings, new_blocks, built_blocks, screen):
 	# create new first block
 	create_block(new_blocks, screen, ai_settings, 1)
 	
-	
-def prep_scoreboard_images(score_board):
-	score_board.prep_score()
-	score_board.prep_target_score()
-	score_board.prep_round()
-	score_board.prep_high_round()
-	score_board.prep_power_up()
-	score_board.prep_shield()
 	
 def update_screen(ai_settings, screen, new_blocks, built_blocks, stats, play_button, score_board):
 	# redraw the scren during each pass of the loop

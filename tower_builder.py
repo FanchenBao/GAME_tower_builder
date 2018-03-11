@@ -20,8 +20,9 @@ def run_game():
 	pygame.display.set_caption("Tower Builder")
 
 	# create an instance to store game stats
-	filename = 'max_block.txt'
-	stats = GameStats(ai_settings, filename)
+	filename_block = 'max_block.txt'
+	filename_score = 'high_score.txt'
+	stats = GameStats(ai_settings, filename_block, filename_score)
 	
 	# the blocks already built and the newly appeared blocks need two different groups
 	built_blocks = Group()
@@ -43,7 +44,7 @@ def run_game():
 	
 	# The main loop of the game
 	while True:
-		gf.check_events(stats, ai_settings, new_blocks, built_blocks, screen, filename)
+		gf.check_events(stats, ai_settings, new_blocks, built_blocks, screen, filename_block, filename_score)
 		if stats.game_active:
 			gf.update_block(new_blocks, built_blocks, screen, ai_settings, stats, score_board)
 		# 	piggy.update()

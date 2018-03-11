@@ -32,7 +32,7 @@ class ScoreBoard():
 			self.ai_settings.background_color)
 		self.score_image_rect = self.score_image.get_rect()
 		self.score_image_rect.left = 5
-		self.score_image_rect.centery = self.screen_rect.centery + 20
+		self.score_image_rect.centery = self.screen_rect.centery + 30
 
 	def prep_high_score(self):
 		''' convert score information into image'''
@@ -43,7 +43,7 @@ class ScoreBoard():
 			self.ai_settings.background_color)
 		self.high_score_image_rect = self.high_score_image.get_rect()
 		self.high_score_image_rect.left = 5
-		self.high_score_image_rect.centery = self.screen_rect.centery + 40
+		self.high_score_image_rect.centery = self.screen_rect.centery + 70
 
 	def prep_block(self):
 		''' convert maximum blocks achieved into image'''
@@ -52,7 +52,7 @@ class ScoreBoard():
 			self.ai_settings.background_color)
 		self.block_image_rect = self.block_image.get_rect()
 		self.block_image_rect.left = 5
-		self.block_image_rect.centery = self.screen_rect.centery - 40
+		self.block_image_rect.centery = self.screen_rect.centery - 70
 
 	def prep_max_block(self):
 		''' convert maximum blocks achieved into image'''
@@ -61,7 +61,7 @@ class ScoreBoard():
 			self.ai_settings.background_color)
 		self.max_block_image_rect = self.max_block_image.get_rect()
 		self.max_block_image_rect.left = 5
-		self.max_block_image_rect.centery = self.screen_rect.centery - 20
+		self.max_block_image_rect.centery = self.screen_rect.centery - 30
 
 	def show_score(self):
 		''' draw score information on the screen'''

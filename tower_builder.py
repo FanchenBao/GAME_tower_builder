@@ -27,26 +27,15 @@ def run_game():
 	# the blocks already built and the newly appeared blocks need two different groups
 	built_blocks = Group()
 	new_blocks = Group()
-
-	# bullets = Group()
-	
-	# rocks = Group()
-	# rock_stats = RockStats()
-	
-	# rewards = Group()
-	# shields = Group()
-
-	
+	messages = Group()
 
 	score_board = ScoreBoard(screen, ai_settings, stats)
-	
-	# gf.create_initial_rocks(screen, ai_settings, rock_stats, rocks)
 	
 	# The main loop of the game
 	while True:
 		gf.check_events(stats, ai_settings, new_blocks, built_blocks, screen, filename_block, filename_score)
 		if stats.game_active:
-			gf.update_block(new_blocks, built_blocks, screen, ai_settings, stats, score_board)
+			gf.update_block(new_blocks, built_blocks, screen, ai_settings, stats, score_board, messages)
 		# 	piggy.update()
 		# 	gf.fire_bullet(ai_settings, screen, piggy, bullets)
 		# 	gf.update_bullets(screen, ai_settings, rocks, bullets, rewards, stats, score_board)
@@ -64,6 +53,6 @@ def run_game():
 			msg2 = 'Press "Q" to Quit'
 			play_button = Button(screen, ai_settings, msg1, msg2)
 
-		gf.update_screen(ai_settings, screen, new_blocks, built_blocks, stats, play_button, score_board)
+		gf.update_screen(ai_settings, screen, new_blocks, built_blocks, stats, play_button, score_board, messages)
 		
 run_game()

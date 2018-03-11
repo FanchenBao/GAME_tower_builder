@@ -1,8 +1,10 @@
 import sys
 import pygame
+from pygame.time import get_ticks
 from block import Block
+from message import Message
 
-def update_block(new_blocks, built_blocks, screen, ai_settings, stats, score_board):
+def update_block(new_blocks, built_blocks, screen, ai_settings, stats, score_board, messages):
 	''' update block behavior'''
 	for block in new_blocks.copy():
 		# check block edges before it is released
@@ -13,15 +15,15 @@ def update_block(new_blocks, built_blocks, screen, ai_settings, stats, score_boa
 		if block.drop:
 			if block.index == 1:
 				# first block has different condition compared to the others
-				check_first_block(block, new_blocks, built_blocks, screen, ai_settings, stats, score_board)
+				check_first_block(block, new_blocks, built_blocks, screen, ai_settings, stats, score_board, messages)
 			else:
-				check_other_block(block, new_blocks, built_blocks, screen, ai_settings, stats, score_board)
+				check_other_block(block, new_blocks, built_blocks, screen, ai_settings, stats, score_board, messages)
 
 	# move the built blocks down to maintain at most 5 blocks on screen
 	adjust_block_position(ai_settings, built_blocks)
 			
 
-def check_first_block(block, new_blocks, built_blocks, screen, ai_settings, stats, score_board):
+def check_first_block(block, new_blocks, built_blocks, screen, ai_settings, stats, score_board, messages):
 	''' examine conditions of first block hitting the ground'''
 	if block.rect.bottom > block.screen_rect.bottom:
 		# if first block hit the ground and part of it is outside the screen, remove the block
@@ -40,19 +42,33 @@ def check_first_block(block, new_blocks, built_blocks, screen, ai_settings, stat
 			show_current_and_max_block_number(stats, built_blocks, score_board)
 
 			# calculate score
-			calculate_first_block_score(block, ai_settings, stats, score_board)
+			calculate_first_block_score(block, ai_settings, stats, score_board, messages, screen)
 
 			# create the first non-FIRST block
 			create_block(new_blocks, screen, ai_settings, (len(built_blocks) + 1))
 
-def calculate_first_block_score(block, ai_settings, stats, score_board):
-	''' calculate score for first block under different conditions'''
+def create_message(messages, screen, ai_settings, flag):
+	'''create a message describing how well the building is'''
+	message = Message(screen, ai_settings, flag)
+	messages.add(message)
+	# record when the message was created
+	message.time = get_ticks()
+
+def calculate_first_block_score(block, ai_settings, stats, score_board, messages, screen):
+	''' calculate score for first block under different conditions.
+	 also create a consummerate message'''
 	if block.rect.centerx == block.screen_rect.centerx:
 		stats.score += ai_settings.perfect_score
+		create_message(messages, screen, ai_settings, 'perfect')
+
 	elif block.rect.centerx > block.screen_rect.width / 4 and block.rect.centerx < block.screen_rect.width / 2:
 		stats.score += ai_settings.good_score
+		create_message(messages, screen, ai_settings, 'good')
+
 	elif block.rect.centerx > block.screen_rect.width / 2 and block.rect.centerx < block.screen_rect.width * (3/4):
 		stats.score += ai_settings.good_score
+		create_message(messages, screen, ai_settings, 'good')
+
 	elif block.rect.centerx <= block.screen_rect.width / 4:
 		stats.score += ai_settings.fair_score
 	elif block.rect.centerx >= block.screen_rect.width * (3/4):
@@ -64,7 +80,7 @@ def calculate_first_block_score(block, ai_settings, stats, score_board):
 		score_board.prep_high_score()
 
 
-def check_other_block(block_top, new_blocks, built_blocks, screen, ai_settings, stats, score_board):
+def check_other_block(block_top, new_blocks, built_blocks, screen, ai_settings, stats, score_board, messages):
 	''' examine conditions of non-first block dropping'''
 	# check for collision of the newly dropped block and the built blocks
 	block_bottom = pygame.sprite.spritecollideany(block_top, built_blocks)
@@ -98,7 +114,7 @@ def check_other_block(block_top, new_blocks, built_blocks, screen, ai_settings, 
 				# the remaining procedures only make sense when block_top stands
 				
 				# block top not falling, so calculate its score
-				calculate_block_top_score(block_top, ai_settings, stats, score_board)
+				calculate_block_top_score(block_top, ai_settings, stats, score_board, screen, messages)
 
 				# calculate leverage of each built block underneath
 				find_leverage(block_top, built_blocks)
@@ -124,13 +140,15 @@ def check_other_block(block_top, new_blocks, built_blocks, screen, ai_settings, 
 		new_blocks.remove(block_top)
 		create_block(new_blocks, screen, ai_settings, (len(built_blocks) + 1))
 
-def calculate_block_top_score(block_top, ai_settings, stats, score_board):
+def calculate_block_top_score(block_top, ai_settings, stats, score_board, screen, messages):
 	''' calculate the score of block top'''
-	if block_top.fulcrum_position == "none":
-		# use perfect score when it's a perfect landing
+	if block_top.rect.width / 2 - abs(block_top.leverage) <= 1:
+		# use perfect score when it's almost a perfect landing
 		stats.score += abs(block_top.leverage) * ai_settings.perfect_score
+		create_message(messages, screen, ai_settings, 'perfect')
 	else:
 		stats.score += abs(block_top.leverage) * ai_settings.good_score
+		create_message(messages, screen, ai_settings, 'good')
 
 	score_board.prep_score()
 	# update high score
@@ -353,12 +371,24 @@ def game_restart(stats, ai_settings, new_blocks, built_blocks, screen):
 	create_block(new_blocks, screen, ai_settings, 1)
 	
 	
-def update_screen(ai_settings, screen, new_blocks, built_blocks, stats, play_button, score_board):
+def update_screen(ai_settings, screen, new_blocks, built_blocks, stats, play_button, score_board, messages):
 	# redraw the scren during each pass of the loop
 	screen.fill(ai_settings.background_color)
 
 	new_blocks.draw(screen)
 	built_blocks.draw(screen)
+
+	for message in messages.copy():
+		message.blitme()
+		# each frame message is blit, get its time
+		current_time = get_ticks()
+		# when message is displayed for more than 1 second, remove it
+		if (current_time - message.time) / 1000 >= 1:
+			messages.remove(message)
+
+
+
+
 
 	
 	

@@ -17,6 +17,8 @@ class Message(Sprite):
 			self.image = pygame.image.load('images/perfect.bmp')
 		if flag == 'good':
 			self.image = pygame.image.load('images/good.bmp')
+		if flag == 'oops':
+			self.image = pygame.image.load('images/oops.bmp')
 
 		self.rect = self.image.get_rect()
 		self.rect.centery = self.screen_rect.centery

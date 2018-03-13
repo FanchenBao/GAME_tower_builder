@@ -30,6 +30,8 @@ def check_first_block(block, new_blocks, built_blocks, screen, ai_settings, stat
 		if (block.rect.left < block.screen_rect.left or 
 			block.rect.right > block.screen_rect.right):
 			new_blocks.remove(block)
+			# notify player it's a bad landing
+			create_message(messages, screen, ai_settings, 'oops')
 			# create a new FIRST block
 			create_block(new_blocks, screen, ai_settings, 1)
 		else:
@@ -90,6 +92,8 @@ def check_other_block(block_top, new_blocks, built_blocks, screen, ai_settings, 
 			block_top.rect.right > block_top.screen_rect.right):
 			# top block doesn't land within the screen, then remove it
 			new_blocks.remove(block_top)
+			# notify player it's a bad landing
+			create_message(messages, screen, ai_settings, 'oops')
 			create_block(new_blocks, screen, ai_settings, block.index)
 		else:
 			# block_top lands within the screen
@@ -99,6 +103,8 @@ def check_other_block(block_top, new_blocks, built_blocks, screen, ai_settings, 
 				# it will still counts as a hit
 				if block_top.rect.bottom > block.rect.top + 15:
 					new_blocks.remove(block_top)
+					# notify player it's a bad landing
+					create_message(messages, screen, ai_settings, 'oops')
 					create_block(new_blocks, screen, ai_settings, (len(built_blocks) + 1))
 					return
 			
@@ -108,7 +114,7 @@ def check_other_block(block_top, new_blocks, built_blocks, screen, ai_settings, 
 			# find the fulcrum of block_top
 			find_fulcrum(block_top, block_bottom)
 			# check stability of block_top
-			check_falling_block_top(block_top, new_blocks, built_blocks, screen, ai_settings)		
+			check_falling_block_top(block_top, new_blocks, built_blocks, screen, ai_settings, messages)		
 
 			if not block_top.fall:
 				# the remaining procedures only make sense when block_top stands
@@ -124,7 +130,7 @@ def check_other_block(block_top, new_blocks, built_blocks, screen, ai_settings, 
 				built_blocks.add(block_top)
 				
 				# check each built block's leverage to find any that has tipped
-				check_falling_block(built_blocks)
+				check_falling_block(built_blocks, messages, screen, ai_settings)
 
 				# remove the built blocks that are falling, and update score
 				remove_falling_block(built_blocks, stats, ai_settings, score_board)
@@ -138,6 +144,8 @@ def check_other_block(block_top, new_blocks, built_blocks, screen, ai_settings, 
 	elif block_top.rect.top >= block_top.screen_rect.bottom:
 		# collision doesn't happen. Remove the dropping block and create a new one
 		new_blocks.remove(block_top)
+		# notify player it's a bad landing
+		create_message(messages, screen, ai_settings, 'oops')
 		create_block(new_blocks, screen, ai_settings, (len(built_blocks) + 1))
 
 def calculate_block_top_score(block_top, ai_settings, stats, score_board, screen, messages):
@@ -167,7 +175,8 @@ def show_current_and_max_block_number(stats, built_blocks, score_board):
 	score_board.prep_max_block()
 
 def adjust_block_position(ai_settings, built_blocks):
-	''' move built blocks down ONE block when there are more than 5 blocks on screen'''
+	''' move built blocks down ONE block when there are more than 5 blocks on screen
+	also move built blocks up when no block is visible on the screen due to falling'''
 	# create a list of all built blocks' indeces
 	list_of_blocks = []
 	for block in built_blocks.sprites():
@@ -210,7 +219,7 @@ def move_block_up(block_top, built_blocks, ai_settings):
 				block.rect.bottom -= ai_settings.block_adjust_speed * 3
 
 
-def check_falling_block_top(block_top, new_blocks, built_blocks, screen, ai_settings):
+def check_falling_block_top(block_top, new_blocks, built_blocks, screen, ai_settings, messages):
 	''' check whether block top can stand. If it cannot, no need to update leverage of the built blocks
 	and a new block will be generated'''
 	
@@ -221,11 +230,15 @@ def check_falling_block_top(block_top, new_blocks, built_blocks, screen, ai_sett
 		if block_top.leverage >= 0:
 			block_top.fall = True
 			new_blocks.remove(block_top)
+			# notify player it's a bad landing
+			create_message(messages, screen, ai_settings, 'oops')
 			create_block(new_blocks, screen, ai_settings, (len(built_blocks) + 1))
 	if block_top.fulcrum_position == "right":
 		if block_top.leverage <= 0:
 			block_top.fall = True
 			new_blocks.remove(block_top)
+			# notify player it's a bad landing
+			create_message(messages, screen, ai_settings, 'oops')
 			create_block(new_blocks, screen, ai_settings, (len(built_blocks) + 1))
 
 def remove_falling_block(built_blocks, stats, ai_settings, score_board):
@@ -242,7 +255,7 @@ def remove_falling_block(built_blocks, stats, ai_settings, score_board):
 		stats.high_score = stats.score
 		score_board.prep_high_score()
 
-def check_falling_block(built_blocks):
+def check_falling_block(built_blocks, messages, screen, ai_settings):
 	''' check each block in built_blocks for its leverage and determine whether it is falling'''
 	# a list to record all the falling blocks
 	list_of_falls = []
@@ -276,6 +289,12 @@ def check_falling_block(built_blocks):
 		for block in built_blocks.sprites():
 			if block.index != 1 and block.fall == False:
 				block.leverage -= block.fulcrum_x * number_of_fallen - fallen_block_center
+
+		# empty the messages, to prevent double-showing the message: block_top is a good
+		# (with message saying 'good'), but blocks beneath fall (with message saying 'oops')
+		messages.empty()
+		# notify player it's a bad landing
+		create_message(messages, screen, ai_settings, 'oops')
 
 def find_leverage(block_top, built_blocks):
 	''' Update the leverage of each built block by subtracting the center of block_top from its fulcrum.'''

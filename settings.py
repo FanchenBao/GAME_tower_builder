@@ -19,8 +19,8 @@ class Settings():
 
 		# speed in which built blocks move down to exit screen
 		self.block_adjust_speed = 1
-		# speed in which built blocks shift side to side
-		self.shift_frequency = 1
+		# the amount of time taken for one shift from left to right
+		self.shift_duration = 1
 		# record the initial center position of the first block, for side to side shift purpose
 		self.initial_center = 0
 		

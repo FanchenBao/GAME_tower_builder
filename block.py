@@ -32,7 +32,7 @@ class Block(Sprite):
 
 		self.x_speed = float(ai_settings.horizontal_speed)
 		self.y_speed = 0
-		self.shift_frequency = float(ai_settings.shift_frequency)
+		self.shift_duration = ai_settings.shift_duration
 		
 		#load the block image
 		self.image = pygame.image.load('images/block.bmp')
@@ -77,7 +77,10 @@ class Block(Sprite):
 
 	def shift(self, shift_range):
 		''' update the shifting of built blocks'''
-		x_shift_speed = shift_range / (1 / self.shift_frequency)
+		# shift speed changes as the shift range increases. The larger the shifr range, the faster the shift speed.
+		# the goal is to allow each shift to complete in the same unit time. 
+		# Here the unit time is set as 50 (but still haven't figured out its unit yet), which allows the blocks to shift in a satisfying rate
+		x_shift_speed = float(((shift_range - self.rect.width) / 2) / self.shift_duration)
 		self.x += x_shift_speed * self.ai_settings.block_shift_direction
 		self.rect.x = self.x
 		

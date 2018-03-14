@@ -31,7 +31,7 @@ def shift_block(ai_settings, built_blocks, stats):
 		# checking the edge of the first block ONLY
 		if block.index == 1:
 			# if only one block is built, keep it stationary
-			if len(built_blocks) == 1:
+			if len(built_blocks) <= ai_settings.max_blocks_on_screen:
 				return
 			# when blocks are shifting, the edge check is DIFFERENT from regular method
 			# because the edges here are dynamic, and falling of blocks can cause the edge to shrink while the blocks are still outside the block.
@@ -164,6 +164,10 @@ def check_other_block(block_top, new_blocks, built_blocks, screen, ai_settings, 
 
 				show_current_and_max_block_number(stats, built_blocks, score_board)
 
+				# update shifting edges
+				stats.left_edge = ai_settings.initial_center - stats.left_shift - block_top.rect.width / 2
+				stats.right_edge = ai_settings.initial_center + stats.right_shift + block_top.rect.width / 2
+
 				# create new block
 				create_block(new_blocks, screen, ai_settings, (len(built_blocks) + 1))
 			
@@ -181,13 +185,10 @@ def find_shift_edge(block, stats, ai_settings):
 		# left shift equals the left part of block outside the fulcrum
 		block.shift = block.rect.width / 2 - abs(block.leverage)
 		stats.left_shift += block.shift
-		# find left edge
-		stats.left_edge = ai_settings.initial_center - stats.left_shift - block.rect.width / 2
 	if block.fulcrum_position == 'right':
 		# same as left shit, just on the right side
 		block.shift = block.rect.width / 2 - block.leverage
 		stats.right_shift += block.shift
-		stats.right_edge = ai_settings.initial_center + stats.right_shift + block.rect.width / 2
 
 def calculate_block_top_score(block_top, ai_settings, stats, score_board, screen, messages):
 	''' calculate the score of block top'''
@@ -224,8 +225,8 @@ def adjust_block_position(ai_settings, built_blocks, stats):
 			break
 	
 	# block shift stops when blocks are moving down or up, then resume after vertical motion ends
-	# if not ai_settings.blocks_vertical_motion:
-	# 	shift_block(ai_settings, built_blocks, stats)
+	if not ai_settings.blocks_vertical_motion:
+		shift_block(ai_settings, built_blocks, stats)
 
 def move_block_down(block_top, built_blocks, ai_settings):
 	# move blocks down if there are more than max blocks on screen
@@ -291,6 +292,7 @@ def check_falling_block(block_top, built_blocks, messages, screen, ai_settings, 
 			
 			# update all blocks' leverages (except first block and block_top)
 			block.leverage += (block.fulcrum_x - block_top.rect.centerx)
+			print(block.index, block.leverage)
 			
 			if block.fulcrum_position == "left" or block.fulcrum_position == "none":
 				if block.leverage >= 0:
@@ -300,6 +302,8 @@ def check_falling_block(block_top, built_blocks, messages, screen, ai_settings, 
 				if block.leverage <= 0:
 					block.fall = True
 					list_of_falls.append(block.index)
+		if block.index == len(built_blocks):
+			print(block.index, block.leverage)
 	# find the most bottom block that is going to fall
 	if list_of_falls:
 		lowest_falling_index = min(list_of_falls)
@@ -324,10 +328,6 @@ def check_falling_block(block_top, built_blocks, messages, screen, ai_settings, 
 					built_blocks.remove(block)
 					# update score, decrease the block points for each removed block
 					stats.score -= ai_settings.block_points
-
-		# update shifting edges
-		stats.left_edge = ai_settings.initial_center - stats.left_shift - block_top.rect.width / 2
-		stats.right_edge = ai_settings.initial_center + stats.right_shift + block_top.rect.width / 2
 		
 		score_board.prep_score()
 		# update high score
@@ -336,9 +336,11 @@ def check_falling_block(block_top, built_blocks, messages, screen, ai_settings, 
 			score_board.prep_high_score()
 		
 		# calculate lost leverage for each non-fallen block and update new leverage
+		print("blocks fall")
 		for block in built_blocks.sprites():
 			if block.index != 1 and block.fall == False:
-				block.leverage -= block.fulcrum_x * number_of_fallen - fallen_block_center
+				block.leverage -= (block.fulcrum_x * number_of_fallen - fallen_block_center)
+				print(block.index, block.leverage)
 
 		# empty the messages, to prevent double-showing the message: block_top is a good
 		# (with message saying 'good'), but blocks beneath fall (with message saying 'oops')

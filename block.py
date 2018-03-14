@@ -19,8 +19,10 @@ class Block(Sprite):
 		self.fulcrum_position = "none"
 		self.fulcrum_x = 0
 
-		# store the leverage of each block, except the first block
-		self.leverage = 0
+		# store the cumulative leverage of each block, except the first block
+		self.sum_leverage = 0
+		# store the initial leverage when block first lands
+		self.ini_leverage = 0
 		
 		# flag indicating whether a built block has tipped over and ready to fall
 		self.fall = False
@@ -30,6 +32,8 @@ class Block(Sprite):
 
 		self.x_speed = float(ai_settings.horizontal_speed)
 		self.y_speed = 0
+		self.shift_frequency = float(ai_settings.shift_frequency)
+		
 		#load the block image
 		self.image = pygame.image.load('images/block.bmp')
 
@@ -45,11 +49,11 @@ class Block(Sprite):
 		self.x = float(self.rect.x)
 		self.y = float(self.rect.y)
 		
-	def check_edges(self):
+	def check_edges(self, left_edge, right_edge):
 		'''check whether the block has hit the left or right edge'''
-		if self.rect.left <= 0:
+		if self.rect.left <= left_edge:
 			return True
-		elif self.rect.right >= self.screen_rect.right:
+		elif self.rect.right >= right_edge:
 			return True
 		else:
 			return False
@@ -71,6 +75,11 @@ class Block(Sprite):
 		self.rect.x = self.x
 		self.rect.y = self.y
 
+	def shift(self, shift_range):
+		''' update the shifting of built blocks'''
+		x_shift_speed = shift_range / (1 / self.shift_frequency)
+		self.x += x_shift_speed * self.ai_settings.block_shift_direction
+		self.rect.x = self.x
 		
 
 	def blitme(self):

@@ -20,9 +20,11 @@ class Settings():
 		# speed in which built blocks move down to exit screen
 		self.block_adjust_speed = 1
 		# the amount of time taken for one shift from left to right
-		self.shift_duration = 1
+		self.shift_duration = 50
 		# record the initial center position of the first block, for side to side shift purpose
 		self.initial_center = 0
+		# flag to indicate whether the blocks are moving down or up (to prevent horizontal shift and vertical motion happen at the same time)
+		self.blocks_vertical_motion = False
 		
 		self.initialize_dynamic_settings()
 		

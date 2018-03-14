@@ -19,35 +19,16 @@ def update_block(new_blocks, built_blocks, screen, ai_settings, stats, score_boa
 				check_first_block(block, new_blocks, built_blocks, screen, ai_settings, stats, score_board, messages)
 			else:
 				check_other_block(block, new_blocks, built_blocks, screen, ai_settings, stats, score_board, messages)
-
-	# make built blocks shift side to side
-	shift_block(ai_settings, built_blocks)
-	# move the built blocks down to maintain at most 5 blocks on screen
-	adjust_block_position(ai_settings, built_blocks)
+	
+	# move blocks up and down or shift left and right, when conditions satisfy
+	adjust_block_position(ai_settings, built_blocks, stats)
 			
-def shift_block(ai_settings, built_blocks):
+def shift_block(ai_settings, built_blocks, stats):
 	''' shift the build blocks side to side to increase difficulty.
-	the extent of shifting determined by the combined left leverage and right leverage of each block when it first lands'''
-	# record the total left and right shift
-	left_shift = 0.0
-	right_shift = 0.0
-	block_width = 0.0
+	the extent of shifting determined by the total left and right shifts of each block'''
 
 	for block in built_blocks.sprites():
-		if block.index == 1:
-			# record block width
-			block_width = float(block.rect.width)
-		if block.fulcrum_position == 'left':
-			# left shift equals the sum of all left part of block outside the fulcrum
-			left_shift += block_width / 2 - abs(block.ini_leverage)
-		if block.fulcrum_position == 'right':
-			# same as left shit, just on the right side
-			right_shift += block_width / 2 - block.ini_leverage
-	# calculate left and right
-	left_edge = ai_settings.initial_center - left_shift - block_width / 2
-	right_edge = ai_settings.initial_center + right_shift + block_width / 2
-
-	for block in built_blocks.sprites():
+		# checking the edge of the first block ONLY
 		if block.index == 1:
 			# if only one block is built, keep it stationary
 			if len(built_blocks) == 1:
@@ -57,15 +38,17 @@ def shift_block(ai_settings, built_blocks):
 			# when this happens, block direction must not change until blocks to return within the shrunken edges 
 			# e.g. if blocks are moving right when edge shrink happens, block must continue moving right until it's within the new edges (even if its current left is more left to the edge, which should cause a change of direction)
 			else:
-				if block.rect.left <= left_edge:
+				if block.rect.left <= stats.left_edge:
 					if ai_settings.block_shift_direction == -1:
 						ai_settings.block_shift_direction = 1
-				elif block.rect.right >= right_edge:
+				if block.rect.right >= stats.right_edge:
 					if ai_settings.block_shift_direction == 1:
 						ai_settings.block_shift_direction = -1
+			break
 	# shift the blocks	
+	shift_range = stats.right_edge - stats.left_edge
 	for block in built_blocks.sprites():
-		block.shift(right_edge - left_edge)	
+		block.lateral_shift(shift_range)	
 
 def check_first_block(block, new_blocks, built_blocks, screen, ai_settings, stats, score_board, messages):
 	''' examine conditions of first block hitting the ground'''
@@ -145,7 +128,7 @@ def check_other_block(block_top, new_blocks, built_blocks, screen, ai_settings, 
 			# block_top lands within the screen
 			for block in built_blocks.sprites():
 				# to elimiate the situation where top block hit the side of the bottom block and still be considered a good hit
-				# 15 here is the error tolerance. If top block hit the side of botoom block within 10 pixels away from bottom block's top edge
+				# 15 here is the error tolerance. If top block hit the side of botoom block within 15 pixels away from bottom block's top edge
 				# it will still counts as a hit
 				if block_top.rect.bottom > block.rect.top + 15:
 					new_blocks.remove(block_top)
@@ -168,18 +151,16 @@ def check_other_block(block_top, new_blocks, built_blocks, screen, ai_settings, 
 				# block top not falling, so calculate its score
 				calculate_block_top_score(block_top, ai_settings, stats, score_board, screen, messages)
 
-				# calculate leverage of each built block underneath
-				find_leverage(block_top, built_blocks)
+				# find block_top and all built blocks' shift
+				find_shift_edge(block_top, stats, ai_settings)
 
 				# remove block_top from new_blocks and put it into built_block
 				new_blocks.remove(block_top)
 				built_blocks.add(block_top)
 				
-				# check each built block's leverage to find any that has tipped
-				check_falling_block(built_blocks, messages, screen, ai_settings)
-
-				# remove the built blocks that are falling, and update score
-				remove_falling_block(built_blocks, stats, ai_settings, score_board)
+				# Update each block's leverage, check each built block's leverage to find any that has tipped, and remove it
+				# Also update the total left and right shifts, as well as edges.
+				check_falling_block(block_top, built_blocks, messages, screen, ai_settings, stats, score_board)
 
 				show_current_and_max_block_number(stats, built_blocks, score_board)
 
@@ -194,14 +175,28 @@ def check_other_block(block_top, new_blocks, built_blocks, screen, ai_settings, 
 		create_message(messages, screen, ai_settings, 'oops')
 		create_block(new_blocks, screen, ai_settings, (len(built_blocks) + 1))
 
+def find_shift_edge(block, stats, ai_settings):
+	''' calculate the shift of each block_top, and update total shift of built blocks and left right edges'''
+	if block.fulcrum_position == 'left':
+		# left shift equals the left part of block outside the fulcrum
+		block.shift = block.rect.width / 2 - abs(block.leverage)
+		stats.left_shift += block.shift
+		# find left edge
+		stats.left_edge = ai_settings.initial_center - stats.left_shift - block.rect.width / 2
+	if block.fulcrum_position == 'right':
+		# same as left shit, just on the right side
+		block.shift = block.rect.width / 2 - block.leverage
+		stats.right_shift += block.shift
+		stats.right_edge = ai_settings.initial_center + stats.right_shift + block.rect.width / 2
+
 def calculate_block_top_score(block_top, ai_settings, stats, score_board, screen, messages):
 	''' calculate the score of block top'''
-	if block_top.rect.width / 2 - abs(block_top.ini_leverage) <= 1:
+	if block_top.rect.width / 2 - abs(block_top.leverage) <= 1:
 		# use perfect score when it's almost a perfect landing
-		stats.score += abs(block_top.ini_leverage) * ai_settings.perfect_score
+		stats.score += abs(block_top.leverage) * ai_settings.perfect_score
 		create_message(messages, screen, ai_settings, 'perfect')
 	else:
-		stats.score += abs(block_top.ini_leverage) * ai_settings.good_score
+		stats.score += abs(block_top.leverage) * ai_settings.good_score
 		create_message(messages, screen, ai_settings, 'good')
 
 	score_board.prep_score()
@@ -220,34 +215,27 @@ def show_current_and_max_block_number(stats, built_blocks, score_board):
 	score_board.prep_block()
 	score_board.prep_max_block()
 
-def adjust_block_position(ai_settings, built_blocks):
+def adjust_block_position(ai_settings, built_blocks, stats):
 	''' move built blocks down ONE block when there are more than 5 blocks on screen
 	also move built blocks up when no block is visible on the screen due to falling'''
-	# create a list of all built blocks' indeces
-	list_of_blocks = []
 	for block in built_blocks.sprites():
-		list_of_blocks.append(block.index)
+		if block.index == len(built_blocks):
+			move_block_down(block, built_blocks, ai_settings)
+			break
 	
-	# find the top block and adjust block position based on it
-	get_top_block(list_of_blocks, built_blocks, ai_settings)
-	
-def get_top_block(list_of_blocks, built_blocks, ai_settings):
-	'''find top block and adjust block positions'''
-	if list_of_blocks:
-		top_index = max(list_of_blocks)
-		for block in built_blocks.sprites():
-			# locate block_top
-			if block.index == top_index:
-				move_block_down(block, built_blocks, ai_settings)
-				move_block_up(block, built_blocks, ai_settings)
-				return
+	# block shift stops when blocks are moving down or up, then resume after vertical motion ends
+	# if not ai_settings.blocks_vertical_motion:
+	# 	shift_block(ai_settings, built_blocks, stats)
 
 def move_block_down(block_top, built_blocks, ai_settings):
 	# move blocks down if there are more than max blocks on screen
 	if ((block_top.screen_rect.bottom - block_top.rect.top) > 
 		ai_settings.max_blocks_on_screen * block_top.rect.height):
+		ai_settings.blocks_vertical_motion = True
 		for block in built_blocks.sprites():
 			block.rect.bottom += ai_settings.block_adjust_speed
+	else:
+		move_block_up(block_top, built_blocks, ai_settings)
 
 def move_block_up(block_top, built_blocks, ai_settings):
 	# move blocks up if there are less than minimum blocks on screen
@@ -255,14 +243,20 @@ def move_block_up(block_top, built_blocks, ai_settings):
 	if len(built_blocks) >= ai_settings.min_blocks_on_screen:
 		if ((block_top.screen_rect.bottom - block_top.rect.top) < 
 			ai_settings.min_blocks_on_screen * (block_top.rect.height - ai_settings.rect_correction)):
+			ai_settings.blocks_vertical_motion = True
 			for block in built_blocks.sprites():
 				block.rect.bottom -= ai_settings.block_adjust_speed * 3
+		else:
+			ai_settings.blocks_vertical_motion = False
 	# when there are fewer than min blocks requried on screen, show all blocks
 	else:
 		if ((block_top.screen_rect.bottom - block_top.rect.top) < 
 			len(built_blocks) * (block_top.rect.height - ai_settings.rect_correction)):
+			ai_settings.blocks_vertical_motion = True
 			for block in built_blocks.sprites():
 				block.rect.bottom -= ai_settings.block_adjust_speed * 3
+		else:
+			ai_settings.blocks_vertical_motion = False
 
 
 def check_falling_block_top(block_top, new_blocks, built_blocks, screen, ai_settings, messages):
@@ -270,50 +264,40 @@ def check_falling_block_top(block_top, new_blocks, built_blocks, screen, ai_sett
 	and a new block will be generated'''
 	
 	# calculate block top leverage
-	block_top.ini_leverage += block_top.fulcrum_x - block_top.rect.centerx
-	block_top.sum_leverage = block_top.ini_leverage
+	block_top.leverage += block_top.fulcrum_x - block_top.rect.centerx
 	# determine its fate
 	if block_top.fulcrum_position == "left" or block_top.fulcrum_position == "none":
-		if block_top.ini_leverage >= 0:
+		if block_top.leverage >= 0:
 			block_top.fall = True
 			new_blocks.remove(block_top)
 			# notify player it's a bad landing
 			create_message(messages, screen, ai_settings, 'oops')
 			create_block(new_blocks, screen, ai_settings, (len(built_blocks) + 1))
 	if block_top.fulcrum_position == "right":
-		if block_top.ini_leverage <= 0:
+		if block_top.leverage <= 0:
 			block_top.fall = True
 			new_blocks.remove(block_top)
 			# notify player it's a bad landing
 			create_message(messages, screen, ai_settings, 'oops')
 			create_block(new_blocks, screen, ai_settings, (len(built_blocks) + 1))
 
-def remove_falling_block(built_blocks, stats, ai_settings, score_board):
-	''' remove the built block that has the fall flag as True.'''
-	for block in built_blocks.copy():
-		if block.fall:
-			built_blocks.remove(block)
-			# update score, decrease the block points for each removed block
-			stats.score -= ai_settings.block_points
-
-	score_board.prep_score()
-	# update high score
-	if stats.score > stats.high_score:
-		stats.high_score = stats.score
-		score_board.prep_high_score()
-
-def check_falling_block(built_blocks, messages, screen, ai_settings):
-	''' check each block in built_blocks for its leverage and determine whether it is falling'''
+def check_falling_block(block_top, built_blocks, messages, screen, ai_settings, stats, score_board):
+	''' check each block in built_blocks for its leverage and determine whether it is falling
+	also update the leverage and left-right shift of remaining blocks'''
 	# a list to record all the falling blocks
 	list_of_falls = []
 	for block in built_blocks.sprites():
-		if block.index != 1:
+		if block.index != 1 and block.index != len(built_blocks):
+			
+			# update all blocks' leverages (except first block and block_top)
+			block.leverage += (block.fulcrum_x - block_top.rect.centerx)
+			
 			if block.fulcrum_position == "left" or block.fulcrum_position == "none":
-				if block.sum_leverage >= 0:
+				if block.leverage >= 0:
 					block.fall = True
 					list_of_falls.append(block.index)
 			if block.fulcrum_position == "right":
-				if block.sum_leverage <= 0:
+				if block.leverage <= 0:
 					block.fall = True
 					list_of_falls.append(block.index)
 	# find the most bottom block that is going to fall
@@ -325,30 +309,42 @@ def check_falling_block(built_blocks, messages, screen, ai_settings):
 		number_of_fallen = 0
 		
 		# all blocks above the lowest falling block shall also fall
-		for block in built_blocks.sprites():
+		for block in built_blocks.copy():
 			if block.index != 1:
 				if block.index >= lowest_falling_index:
 					block.fall = True
 					fallen_block_center += block.rect.centerx
 					number_of_fallen += 1
+					# also update the left and right shift
+					if block.fulcrum_position == 'left':
+						stats.left_shift -= block.shift
+					if block.fulcrum_position == 'right':
+						stats.right_shift -= block.shift
+					# remove falling blocks
+					built_blocks.remove(block)
+					# update score, decrease the block points for each removed block
+					stats.score -= ai_settings.block_points
+
+		# update shifting edges
+		stats.left_edge = ai_settings.initial_center - stats.left_shift - block_top.rect.width / 2
+		stats.right_edge = ai_settings.initial_center + stats.right_shift + block_top.rect.width / 2
+		
+		score_board.prep_score()
+		# update high score
+		if stats.score > stats.high_score:
+			stats.high_score = stats.score
+			score_board.prep_high_score()
 		
 		# calculate lost leverage for each non-fallen block and update new leverage
 		for block in built_blocks.sprites():
 			if block.index != 1 and block.fall == False:
-				block.sum_leverage -= block.fulcrum_x * number_of_fallen - fallen_block_center
+				block.leverage -= block.fulcrum_x * number_of_fallen - fallen_block_center
 
 		# empty the messages, to prevent double-showing the message: block_top is a good
 		# (with message saying 'good'), but blocks beneath fall (with message saying 'oops')
 		messages.empty()
 		# notify player it's a bad landing
 		create_message(messages, screen, ai_settings, 'oops')
-
-def find_leverage(block_top, built_blocks):
-	''' Update the leverage of each built block by subtracting the center of block_top from its fulcrum.'''
-	for block in built_blocks.sprites():
-		if block.index != 1:
-			block.sum_leverage += (block.fulcrum_x - block_top.rect.centerx)
-
 
 def find_fulcrum(block_top, block_bottom):
 	''' determine the fulcrum position and x coordinate on which block_top is balanced on block_bottom'''

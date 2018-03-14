@@ -19,10 +19,10 @@ class Block(Sprite):
 		self.fulcrum_position = "none"
 		self.fulcrum_x = 0
 
-		# store the cumulative leverage of each block, except the first block
-		self.sum_leverage = 0
-		# store the initial leverage when block first lands
-		self.ini_leverage = 0
+		# store the leverage of each block, except the first block
+		self.leverage = 0
+		# store the left (when fulcrum on left) or right (when fulcrum on right) shift when block first lands
+		self.shift = 0
 		
 		# flag indicating whether a built block has tipped over and ready to fall
 		self.fall = False
@@ -75,7 +75,7 @@ class Block(Sprite):
 		self.rect.x = self.x
 		self.rect.y = self.y
 
-	def shift(self, shift_range):
+	def lateral_shift(self, shift_range):
 		''' update the shifting of built blocks'''
 		# shift speed changes as the shift range increases. The larger the shifr range, the faster the shift speed.
 		# the goal is to allow each shift to complete in the same unit time. 

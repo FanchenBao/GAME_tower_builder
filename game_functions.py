@@ -123,7 +123,7 @@ def check_other_block(block_top, new_blocks, built_blocks, screen, ai_settings, 
 			new_blocks.remove(block_top)
 			# notify player it's a bad landing
 			create_message(messages, screen, ai_settings, 'oops')
-			create_block(new_blocks, screen, ai_settings, block.index)
+			create_block(new_blocks, screen, ai_settings, block_top.index)
 		else:
 			# block_top lands within the screen
 			for block in built_blocks.sprites():
@@ -307,15 +307,16 @@ def check_falling_block(block_top, built_blocks, messages, screen, ai_settings, 
 			block.leverage += new_lev
 			# record each newly added leverage
 			block.each_leverage.append(new_lev)
+			print(block.index, block.leverage)
 
-			if block.fulcrum_position == "left" or block.fulcrum_position == "none":
-				if block.leverage >= 0:
-					block.fall = True
-					list_of_falls.append(block.index)
-			if block.fulcrum_position == "right":
-				if block.leverage <= 0:
-					block.fall = True
-					list_of_falls.append(block.index)
+			if len(built_blocks) > ai_settings.max_blocks_on_screen:
+				if block.index > (len(built_blocks) - ai_settings.max_blocks_on_screen):
+					assign_fall(block, list_of_falls)
+			else:
+				assign_fall(block, list_of_falls)
+
+		if block.index == len(built_blocks):
+			print(block.index, block.leverage)
 
 	# find the lowest block that is going to fall
 	if list_of_falls:
@@ -344,6 +345,7 @@ def check_falling_block(block_top, built_blocks, messages, screen, ai_settings, 
 			score_board.prep_high_score()
 		
 		# calculate lost leverage for each non-fallen block and update new leverage
+		print('block fall!')
 		for block in built_blocks.sprites():
 			if block.index != 1 and block.fall == False:
 				# record the position of the lowest falling block in each_leverage list
@@ -352,12 +354,23 @@ def check_falling_block(block_top, built_blocks, messages, screen, ai_settings, 
 				block.leverage -= sum(block.each_leverage[pos:])
 				# also remove them individually from the list
 				del block.each_leverage[pos:]
+				print(block.index, block.leverage)
 
 		# empty the messages, to prevent double-showing the message: block_top is a good
 		# (with message saying 'good'), but blocks beneath fall (with message saying 'oops')
 		messages.empty()
 		# notify player it's a bad landing
 		create_message(messages, screen, ai_settings, 'oops')
+
+def assign_fall(block, list_of_falls):
+	if block.fulcrum_position == "left" or block.fulcrum_position == "none":
+		if block.leverage >= 0:
+			block.fall = True
+			list_of_falls.append(block.index)
+	if block.fulcrum_position == "right":
+		if block.leverage <= 0:
+			block.fall = True
+			list_of_falls.append(block.index)
 
 def find_fulcrum(block_top, block_bottom):
 	''' determine the fulcrum position and x coordinate on which block_top is balanced on block_bottom'''

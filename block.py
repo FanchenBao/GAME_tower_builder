@@ -19,8 +19,11 @@ class Block(Sprite):
 		self.fulcrum_position = "none"
 		self.fulcrum_x = 0
 
-		# store the leverage of each block, except the first block
+		# store the accumulated leverage of each block, except the first block
 		self.leverage = 0
+		# store each additional leverage added to the block
+		self.each_leverage = []
+		
 		# store the left (when fulcrum on left) or right (when fulcrum on right) shift when block first lands
 		self.shift = 0
 		
@@ -29,6 +32,9 @@ class Block(Sprite):
 
 		# indexing each block
 		self.index = index
+
+		# store the centerx value when a block first lands
+		self.original_center = 0
 
 		self.x_speed = float(ai_settings.horizontal_speed)
 		self.y_speed = 0

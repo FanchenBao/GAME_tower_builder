@@ -31,7 +31,7 @@ def shift_block(ai_settings, built_blocks, stats):
 		# checking the edge of the first block ONLY
 		if block.index == 1:
 			# if only one block is built, keep it stationary
-			if len(built_blocks) <= ai_settings.max_blocks_on_screen:
+			if len(built_blocks) <= ai_settings.min_blocks_on_screen:
 				return
 			# when blocks are shifting, the edge check is DIFFERENT from regular method
 			# because the edges here are dynamic, and falling of blocks can cause the edge to shrink while the blocks are still outside the block.
@@ -139,6 +139,8 @@ def check_other_block(block_top, new_blocks, built_blocks, screen, ai_settings, 
 			
 			# position block_top on top of block_bottom with rect correction
 			block_top.rect.bottom = block_bottom.rect.top + ai_settings.rect_correction
+			# # store the original centerx for future use
+			# block_top.original_center = block_top.rect.centerx
 			
 			# find the fulcrum of block_top
 			find_fulcrum(block_top, block_bottom)
@@ -189,6 +191,15 @@ def find_shift_edge(block, stats, ai_settings):
 		# same as left shit, just on the right side
 		block.shift = block.rect.width / 2 - block.leverage
 		stats.right_shift += block.shift
+	if block.fulcrum_position == 'none':
+		# reward a perfect hit by reducing shift		
+		stats.right_shift -= ai_settings.shift_reward
+		if stats.right_shift < 0:
+			stats.right_shift = 0
+		stats.left_shift -= ai_settings.shift_reward
+		if stats.left_shift < 0:
+			stats.left_shift = 0
+
 
 def calculate_block_top_score(block_top, ai_settings, stats, score_board, screen, messages):
 	''' calculate the score of block top'''
@@ -291,9 +302,12 @@ def check_falling_block(block_top, built_blocks, messages, screen, ai_settings, 
 		if block.index != 1 and block.index != len(built_blocks):
 			
 			# update all blocks' leverages (except first block and block_top)
-			block.leverage += (block.fulcrum_x - block_top.rect.centerx)
-			print(block.index, block.leverage)
-			
+			new_lev = block.fulcrum_x - block_top.rect.centerx
+			# sum of all added leverage
+			block.leverage += new_lev
+			# record each newly added leverage
+			block.each_leverage.append(new_lev)
+
 			if block.fulcrum_position == "left" or block.fulcrum_position == "none":
 				if block.leverage >= 0:
 					block.fall = True
@@ -302,28 +316,22 @@ def check_falling_block(block_top, built_blocks, messages, screen, ai_settings, 
 				if block.leverage <= 0:
 					block.fall = True
 					list_of_falls.append(block.index)
-		if block.index == len(built_blocks):
-			print(block.index, block.leverage)
-	# find the most bottom block that is going to fall
+
+	# find the lowest block that is going to fall
 	if list_of_falls:
 		lowest_falling_index = min(list_of_falls)
-		# record the centerx value of each fallen block
-		fallen_block_center = 0
-		# record the number of blocks fallen
-		number_of_fallen = 0
 		
 		# all blocks above the lowest falling block shall also fall
 		for block in built_blocks.copy():
 			if block.index != 1:
 				if block.index >= lowest_falling_index:
 					block.fall = True
-					fallen_block_center += block.rect.centerx
-					number_of_fallen += 1
-					# also update the left and right shift
+					# Update the left and right shift
 					if block.fulcrum_position == 'left':
 						stats.left_shift -= block.shift
 					if block.fulcrum_position == 'right':
 						stats.right_shift -= block.shift
+					
 					# remove falling blocks
 					built_blocks.remove(block)
 					# update score, decrease the block points for each removed block
@@ -336,11 +344,14 @@ def check_falling_block(block_top, built_blocks, messages, screen, ai_settings, 
 			score_board.prep_high_score()
 		
 		# calculate lost leverage for each non-fallen block and update new leverage
-		print("blocks fall")
 		for block in built_blocks.sprites():
 			if block.index != 1 and block.fall == False:
-				block.leverage -= (block.fulcrum_x * number_of_fallen - fallen_block_center)
-				print(block.index, block.leverage)
+				# record the position of the lowest falling block in each_leverage list
+				pos = lowest_falling_index - block.index - 1
+				# remove all these leverages from the total leverage
+				block.leverage -= sum(block.each_leverage[pos:])
+				# also remove them individually from the list
+				del block.each_leverage[pos:]
 
 		# empty the messages, to prevent double-showing the message: block_top is a good
 		# (with message saying 'good'), but blocks beneath fall (with message saying 'oops')

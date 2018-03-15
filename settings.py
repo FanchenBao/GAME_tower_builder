@@ -25,6 +25,8 @@ class Settings():
 		self.initial_center = 0
 		# flag to indicate whether the blocks are moving down or up (to prevent horizontal shift and vertical motion happen at the same time)
 		self.blocks_vertical_motion = False
+
+		self.shift_reward = 10
 		
 		self.initialize_dynamic_settings()
 		

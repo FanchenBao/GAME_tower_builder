@@ -26,7 +26,10 @@ class Settings():
 		# flag to indicate whether the blocks are moving down or up (to prevent horizontal shift and vertical motion happen at the same time)
 		self.blocks_vertical_motion = False
 
+		# the amount of shift reduction if a landing is deemed perfect
 		self.shift_reward = 10
+		# when a block lands within the error margin for a perfect landing, it will be considered perfect landing
+		self.perfect_margin = 1
 		
 		self.initialize_dynamic_settings()
 		
@@ -43,7 +46,7 @@ class Settings():
 		self.g = 0.3
 
 		# the scoring system. Score refers to each successful building attempt
-		self.perfect_score = 100
+		self.perfect_score = 1000
 		self.good_score = 10
 		self.fair_score = 5
 		# points refer to the value of each block

@@ -33,8 +33,8 @@ class Block(Sprite):
 		# indexing each block
 		self.index = index
 
-		# store the centerx value when a block first lands
-		self.original_center = 0
+		# a flag indicating whether a landing is deemed perfect (within the perfect_margin)
+		self.perfect = False
 
 		self.x_speed = float(ai_settings.horizontal_speed)
 		self.y_speed = 0

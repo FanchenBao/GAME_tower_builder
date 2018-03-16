@@ -13,11 +13,16 @@ class GameStats():
 		# record game score and block number
 		self.score = 0
 		self.number_block = 0
+		
 		# stats related to blocks shifting side to side
-		self.left_shift = 0
-		self.right_shift = 0
+		# list of shifts from all blocks
+		self.each_shift = []
+		# store the left and right edge of shift
 		self.left_edge = 0
 		self.right_edge = 0
+
+		# record the number of landing that is perfect
+		self.number_perfect = 0
 
 	def read_max_block(self, filename_block):
 		'''import all time high score'''

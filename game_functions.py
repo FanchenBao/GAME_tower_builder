@@ -66,6 +66,8 @@ def check_first_block(block, new_blocks, built_blocks, screen, ai_settings, stat
 			block.rect.bottom = block.screen_rect.bottom + ai_settings.first_block_rect_correction
 			# record the initial center position, for side to side shift purpose
 			ai_settings.initial_center = block.rect.centerx
+			# first block has 0 degree of shifting
+			stats.each_shift.append(0)
 			# remove it from the new blocks and add to built block
 			new_blocks.remove(block)
 			built_blocks.add(block)
@@ -139,11 +141,9 @@ def check_other_block(block_top, new_blocks, built_blocks, screen, ai_settings, 
 			
 			# position block_top on top of block_bottom with rect correction
 			block_top.rect.bottom = block_bottom.rect.top + ai_settings.rect_correction
-			# # store the original centerx for future use
-			# block_top.original_center = block_top.rect.centerx
 			
 			# find the fulcrum of block_top
-			find_fulcrum(block_top, block_bottom)
+			find_fulcrum(block_top, block_bottom, stats)
 			# check stability of block_top
 			check_falling_block_top(block_top, new_blocks, built_blocks, screen, ai_settings, messages)		
 
@@ -154,7 +154,9 @@ def check_other_block(block_top, new_blocks, built_blocks, screen, ai_settings, 
 				calculate_block_top_score(block_top, ai_settings, stats, score_board, screen, messages)
 
 				# find block_top and all built blocks' shift
-				find_shift_edge(block_top, stats, ai_settings)
+				for block in built_blocks.sprites():
+					if block.index == 1:
+						find_shift(block_top, block, stats, ai_settings)
 
 				# remove block_top from new_blocks and put it into built_block
 				new_blocks.remove(block_top)
@@ -167,9 +169,8 @@ def check_other_block(block_top, new_blocks, built_blocks, screen, ai_settings, 
 				show_current_and_max_block_number(stats, built_blocks, score_board)
 
 				# update shifting edges
-				stats.left_edge = ai_settings.initial_center - stats.left_shift - block_top.rect.width / 2
-				stats.right_edge = ai_settings.initial_center + stats.right_shift + block_top.rect.width / 2
-
+				find_shifting_edge(stats, ai_settings, block_top)
+				
 				# create new block
 				create_block(new_blocks, screen, ai_settings, (len(built_blocks) + 1))
 			
@@ -181,29 +182,40 @@ def check_other_block(block_top, new_blocks, built_blocks, screen, ai_settings, 
 		create_message(messages, screen, ai_settings, 'oops')
 		create_block(new_blocks, screen, ai_settings, (len(built_blocks) + 1))
 
-def find_shift_edge(block, stats, ai_settings):
-	''' calculate the shift of each block_top, and update total shift of built blocks and left right edges'''
-	if block.fulcrum_position == 'left':
-		# left shift equals the left part of block outside the fulcrum
-		block.shift = block.rect.width / 2 - abs(block.leverage)
-		stats.left_shift += block.shift
-	if block.fulcrum_position == 'right':
-		# same as left shit, just on the right side
-		block.shift = block.rect.width / 2 - block.leverage
-		stats.right_shift += block.shift
-	if block.fulcrum_position == 'none':
-		# reward a perfect hit by reducing shift		
-		stats.right_shift -= ai_settings.shift_reward
-		if stats.right_shift < 0:
-			stats.right_shift = 0
-		stats.left_shift -= ai_settings.shift_reward
-		if stats.left_shift < 0:
-			stats.left_shift = 0
+def find_shifting_edge(stats, ai_settings, block_top):
+	total_reward = ai_settings.shift_reward * stats.number_perfect
+	print(stats.each_shift)
+	left_shift = min(stats.each_shift) + total_reward
+	if left_shift > 0:
+		left_shift = 0
 
+	right_shift = max(stats.each_shift) - total_reward
+	if right_shift < 0:
+		right_shift = 0
+
+	stats.left_edge = ai_settings.initial_center + left_shift - block_top.rect.width / 2
+	stats.right_edge = ai_settings.initial_center + right_shift + block_top.rect.width / 2
+
+def find_shift(block_top, block_bottom, stats, ai_settings):
+	''' calculate the shift of each block_top, and update total shift of built blocks and left right edges'''
+	if block_top.fulcrum_position == 'left':
+		# left shift (negative value) equals the left side of block outside the left side of first block
+		block_top.shift = block_top.rect.left - block_bottom.rect.left
+		stats.each_shift.append(block_top.shift)
+	if block_top.fulcrum_position == 'right':
+		# right shift (positive value) equals the right side of block outside the right side of first block
+		block_top.shift = block_top.rect.right - block_bottom.rect.right
+		stats.each_shift.append(block_top.shift)
+	if block_top.fulcrum_position == 'none':
+		stats.each_shift.append(0)
 
 def calculate_block_top_score(block_top, ai_settings, stats, score_board, screen, messages):
 	''' calculate the score of block top'''
-	if block_top.rect.width / 2 - abs(block_top.leverage) <= 1:
+	if block_top.rect.width / 2 - abs(block_top.leverage) <= ai_settings.perfect_margin:
+		# record the block is a perfect landing
+		block_top.perfect = True
+		# count it towards the total number of perfect landing
+		stats.number_perfect += 1
 		# use perfect score when it's almost a perfect landing
 		stats.score += abs(block_top.leverage) * ai_settings.perfect_score
 		create_message(messages, screen, ai_settings, 'perfect')
@@ -307,16 +319,12 @@ def check_falling_block(block_top, built_blocks, messages, screen, ai_settings, 
 			block.leverage += new_lev
 			# record each newly added leverage
 			block.each_leverage.append(new_lev)
-			print(block.index, block.leverage)
 
 			if len(built_blocks) > ai_settings.max_blocks_on_screen:
 				if block.index > (len(built_blocks) - ai_settings.max_blocks_on_screen):
 					assign_fall(block, list_of_falls)
 			else:
 				assign_fall(block, list_of_falls)
-
-		if block.index == len(built_blocks):
-			print(block.index, block.leverage)
 
 	# find the lowest block that is going to fall
 	if list_of_falls:
@@ -327,14 +335,17 @@ def check_falling_block(block_top, built_blocks, messages, screen, ai_settings, 
 			if block.index != 1:
 				if block.index >= lowest_falling_index:
 					block.fall = True
-					# Update the left and right shift
-					if block.fulcrum_position == 'left':
-						stats.left_shift -= block.shift
-					if block.fulcrum_position == 'right':
-						stats.right_shift -= block.shift
+					
+					# if a fallen block is a perfect land, reduce perfect count
+					if block.perfect:
+						stats.number_perfect -= 1
+
+					# remove its shift value from the each_shift list
+					stats.each_shift.remove(block.shift)
 					
 					# remove falling blocks
 					built_blocks.remove(block)
+					
 					# update score, decrease the block points for each removed block
 					stats.score -= ai_settings.block_points
 		
@@ -345,7 +356,6 @@ def check_falling_block(block_top, built_blocks, messages, screen, ai_settings, 
 			score_board.prep_high_score()
 		
 		# calculate lost leverage for each non-fallen block and update new leverage
-		print('block fall!')
 		for block in built_blocks.sprites():
 			if block.index != 1 and block.fall == False:
 				# record the position of the lowest falling block in each_leverage list
@@ -354,7 +364,6 @@ def check_falling_block(block_top, built_blocks, messages, screen, ai_settings, 
 				block.leverage -= sum(block.each_leverage[pos:])
 				# also remove them individually from the list
 				del block.each_leverage[pos:]
-				print(block.index, block.leverage)
 
 		# empty the messages, to prevent double-showing the message: block_top is a good
 		# (with message saying 'good'), but blocks beneath fall (with message saying 'oops')
@@ -372,7 +381,7 @@ def assign_fall(block, list_of_falls):
 			block.fall = True
 			list_of_falls.append(block.index)
 
-def find_fulcrum(block_top, block_bottom):
+def find_fulcrum(block_top, block_bottom, stats):
 	''' determine the fulcrum position and x coordinate on which block_top is balanced on block_bottom'''
 	if (block_bottom.rect.left > block_top.rect.left and 
 		block_bottom.rect.left < block_top.rect.right):

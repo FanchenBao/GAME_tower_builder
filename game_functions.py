@@ -55,6 +55,14 @@ def update_falls_left(stats, score_board):
 	stats.falls_left -= 1
 	score_board.prep_falls_left()
 	if stats.falls_left == 0:
+		# update high score
+		if stats.score > stats.high_score:
+			stats.high_score = stats.score
+			score_board.prep_high_score()
+		# update max block
+		if stats.number_block > stats.max_block:
+			stats.max_block = stats.number_block
+			score_board.prep_max_block()
 		stats.game_active = False
 
 def check_first_block(block, new_blocks, built_blocks, screen, ai_settings, stats, score_board, messages):
@@ -81,7 +89,7 @@ def check_first_block(block, new_blocks, built_blocks, screen, ai_settings, stat
 			new_blocks.remove(block)
 			built_blocks.add(block)
 			
-			show_current_and_max_block_number(stats, built_blocks, score_board, ai_settings)
+			show_current_block_number(stats, built_blocks, score_board, ai_settings)
 
 			# calculate score
 			calculate_first_block_score(block, ai_settings, stats, score_board, messages, screen)
@@ -96,35 +104,27 @@ def create_message(messages, screen, ai_settings, flag):
 	# record when the message was created
 	message.time = get_ticks()
 
-def update_score(score_board, stats):
-	''' update score in score_board and determine whether high score needs update'''
-	score_board.prep_score()
-	# update high score
-	if stats.score > stats.high_score:
-		stats.high_score = stats.score
-		score_board.prep_high_score()	
-
 def calculate_first_block_score(block, ai_settings, stats, score_board, messages, screen):
 	''' calculate score for first block under different conditions.
 	 also create a consummerate message'''
 	if block.rect.centerx == block.screen_rect.centerx:
-		stats.score += ai_settings.perfect_score
+		stats.score += int(ai_settings.perfect_score)
 		create_message(messages, screen, ai_settings, 'perfect')
 
 	elif block.rect.centerx > block.screen_rect.width / 4 and block.rect.centerx < block.screen_rect.width / 2:
-		stats.score += ai_settings.good_score
+		stats.score += int(ai_settings.good_score)
 		create_message(messages, screen, ai_settings, 'good')
 
 	elif block.rect.centerx > block.screen_rect.width / 2 and block.rect.centerx < block.screen_rect.width * (3/4):
-		stats.score += ai_settings.good_score
+		stats.score += int(ai_settings.good_score)
 		create_message(messages, screen, ai_settings, 'good')
 
 	elif block.rect.centerx <= block.screen_rect.width / 4:
-		stats.score += ai_settings.fair_score
+		stats.score += int(ai_settings.fair_score)
 	elif block.rect.centerx >= block.screen_rect.width * (3/4):
-		stats.score += ai_settings.fair_score
+		stats.score += int(ai_settings.fair_score)
 	
-	update_score(score_board, stats)
+	score_board.prep_score()
 
 
 def check_other_block(block_top, new_blocks, built_blocks, screen, ai_settings, stats, score_board, messages):
@@ -182,7 +182,7 @@ def check_other_block(block_top, new_blocks, built_blocks, screen, ai_settings, 
 				# Also update the total left and right shifts, as well as edges.
 				check_falling_block(block_top, built_blocks, messages, screen, ai_settings, stats, score_board)
 
-				show_current_and_max_block_number(stats, built_blocks, score_board, ai_settings)
+				show_current_block_number(stats, built_blocks, score_board, ai_settings)
 
 				# update shifting edges
 				find_shifting_edge(stats, ai_settings, block_top)
@@ -239,34 +239,31 @@ def calculate_block_top_score(block_top, ai_settings, stats, score_board, screen
 	''' calculate the score of block top'''
 	# perfect landing
 	if block_top.perfect:
-		stats.score += abs(block_top.leverage) * ai_settings.perfect_score
+		stats.score += abs(block_top.leverage) * int(ai_settings.perfect_score)
 		create_message(messages, screen, ai_settings, 'perfect')
 	# all other landing
 	else:
-		stats.score += abs(block_top.leverage) * ai_settings.good_score
+		stats.score += abs(block_top.leverage) * int(ai_settings.good_score)
 		create_message(messages, screen, ai_settings, 'good')
 
-	update_score(score_board, stats)
+	score_board.prep_score()
 
-def show_current_and_max_block_number(stats, built_blocks, score_board, ai_settings):
+def show_current_block_number(stats, built_blocks, score_board, ai_settings):
+	''' update block number and check for leveling up'''
 	# record current number of built blocks
 	stats.number_block = len(built_blocks)
-	# set new record in max block if necessary
-	if stats.number_block > stats.max_block:
-		stats.max_block = stats.number_block
 
 	if stats.number_block > stats.level * ai_settings.level_up_requirement:
 		stats.level += 1
 		level_up(ai_settings)
 
 	score_board.prep_block()
-	score_board.prep_max_block()
 
 def level_up(ai_settings):
 	''' update parameters in settings after level up'''
 	# game mechanics change, make game more difficult
 	ai_settings.horizontal_speed *= ai_settings.scale_factor
-	ai_settings.shift_coefficient *= (ai_settings.scale_factor ** 2)
+	ai_settings.shift_coefficient *= ai_settings.scale_factor
 	# scoring system update
 	ai_settings.perfect_score *= ai_settings.scale_factor
 	ai_settings.good_score *= ai_settings.scale_factor
@@ -381,7 +378,7 @@ def remove_blocks(built_blocks, lowest_falling_index, stats, ai_settings):
 				built_blocks.remove(block)
 				
 				# update score, decrease the block points for each removed block
-				stats.score -= ai_settings.block_points
+				stats.score -= int(ai_settings.block_points)
 
 def check_falling_block(block_top, built_blocks, messages, screen, ai_settings, stats, score_board):
 	''' check each block in built_blocks for its leverage and determine whether it is falling
@@ -408,7 +405,7 @@ def check_falling_block(block_top, built_blocks, messages, screen, ai_settings, 
 		# all blocks above the lowest falling block shall also fall
 		remove_blocks(built_blocks, lowest_falling_index, stats, ai_settings)
 		
-		update_score(score_board, stats)
+		score_board.prep_score()
 		
 		# calculate lost leverage for each non-fallen block and update new leverage
 		update_lost_leverage(built_blocks, lowest_falling_index)
@@ -540,6 +537,8 @@ def prep_scoreboard_images(score_board):
 	score_board.prep_score()
 	score_board.prep_block()
 	score_board.prep_falls_left()
+	score_board.prep_high_score()
+	score_board.prep_max_block()
 	
 def update_screen(ai_settings, screen, new_blocks, built_blocks, stats, play_button, score_board, messages):
 	# redraw the scren during each pass of the loop

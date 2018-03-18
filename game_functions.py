@@ -183,7 +183,7 @@ def check_other_block(block_top, new_blocks, built_blocks, screen, ai_settings, 
 				check_falling_block(block_top, built_blocks, messages, screen, ai_settings, stats, score_board)
 
 				show_current_block_number(stats, built_blocks, score_board, ai_settings)
-
+				
 				# update shifting edges
 				find_shifting_edge(stats, ai_settings, block_top)
 				
@@ -406,7 +406,8 @@ def check_falling_block(block_top, built_blocks, messages, screen, ai_settings, 
 		remove_blocks(built_blocks, lowest_falling_index, stats, ai_settings)
 		
 		score_board.prep_score()
-		
+		# update number of blocks left in the built blocks (for use in update_falls_left)
+		stats.number_block = len(built_blocks)
 		# calculate lost leverage for each non-fallen block and update new leverage
 		update_lost_leverage(built_blocks, lowest_falling_index)
 
@@ -415,6 +416,7 @@ def check_falling_block(block_top, built_blocks, messages, screen, ai_settings, 
 		messages.empty()
 		# notify player it's a bad landing
 		create_message(messages, screen, ai_settings, 'oops')
+
 		# check how many falls left for player
 		update_falls_left(stats, score_board)
 

@@ -4,12 +4,14 @@ from random import randint
 
 
 class Block(Sprite):
-	def __init__(self, screen, ai_settings, index):
+	def __init__(self, screen, ai_settings, index, sc = False):
 		super().__init__()
 		'''initialize block and determine its original position on screen'''
 		self.screen = screen
 		self.ai_settings = ai_settings
 		self.screen_rect = self.screen.get_rect()
+		# when sc is true, block load the sc_block image for score board
+		self.sc = sc
 
 		# a flag indicating whether the block has been dropped
 		self.drop = False
@@ -41,7 +43,10 @@ class Block(Sprite):
 		self.shift_duration = ai_settings.shift_duration
 		
 		#load the block image
-		self.image = pygame.image.load('images/block.bmp')
+		if self.sc:
+			self.image = pygame.image.load('images/sc_block.bmp')
+		else:
+			self.image = pygame.image.load('images/block.bmp')
 
 		#get block rect
 		self.rect = self.image.get_rect()
@@ -49,7 +54,7 @@ class Block(Sprite):
 		# new block initial position (actual position is random)
 		# also avoid appearing too close to the edge, might result in bug
 		self.rect.x = randint(5, self.screen_rect.right - self.rect.width - 5)
-		self.rect.y = 0
+		self.rect.y = 60
 
 		# store a decimal value for rock's location for fine tuning position
 		self.x = float(self.rect.x)
@@ -68,7 +73,7 @@ class Block(Sprite):
 		''' update current rock position'''
 		if not self.drop:
 			# if block is not dropped, it moves side to side at the top
-			self.y = 0
+			self.y = 60
 		else:
 			# if block is dropped, it falls freely with regular g while maintaining the horizontal speed
 			# remember, everytime the program runs this script, it can be considered unit time (or dt)

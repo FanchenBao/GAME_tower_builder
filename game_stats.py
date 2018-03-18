@@ -13,6 +13,9 @@ class GameStats():
 		# record game score and block number
 		self.score = 0
 		self.number_block = 0
+		self.falls_left = self.ai_settings.max_falls_allowed
+		# level up every certain number of blocks built (see settings), level info not shown to player
+		self.level = 1
 		
 		# stats related to blocks shifting side to side
 		# list of shifts from all blocks

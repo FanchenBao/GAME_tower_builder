@@ -29,11 +29,13 @@ def run_game():
 	new_blocks = Group()
 	messages = Group()
 
-	score_board = ScoreBoard(screen, ai_settings, stats)
+	# blocks specifically for score_board use
+	sc_blocks = Group()
+	score_board = ScoreBoard(screen, ai_settings, stats, sc_blocks)
 	
 	# The main loop of the game
 	while True:
-		gf.check_events(stats, ai_settings, new_blocks, built_blocks, screen, filename_block, filename_score)
+		gf.check_events(stats, ai_settings, new_blocks, built_blocks, screen, filename_block, filename_score, score_board)
 		if stats.game_active:
 			gf.update_block(new_blocks, built_blocks, screen, ai_settings, stats, score_board, messages)
 		# 	piggy.update()
@@ -45,13 +47,12 @@ def run_game():
 		# 	gf.check_round(stats, score_board, ai_settings)
 		
 		# create a play button
-		# # if stats.piggy_hit:
-		# # 	msg1 = "Game Over"
-		# # else:
+		if stats.falls_left == 0:
+			msg1 = "Game Over"
 		else:
-			msg1 = 'Press "P" to Play'
-			msg2 = 'Press "Q" to Quit'
-			play_button = Button(screen, ai_settings, msg1, msg2)
+			msg1 = 'Press "Q" to Quit'
+		msg2 = 'Press "P" to Play'
+		play_button = Button(screen, ai_settings, msg1, msg2)
 
 		gf.update_screen(ai_settings, screen, new_blocks, built_blocks, stats, play_button, score_board, messages)
 		

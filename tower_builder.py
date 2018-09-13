@@ -1,3 +1,12 @@
+'''
+Author: Fanche Bao
+Date: 03/10/2018
+
+Description:
+Driver file
+User spacebar to drop the building block. Build as high as possible.
+'''
+
 import pygame
 from pygame.sprite import Group
 from settings import Settings
@@ -38,13 +47,6 @@ def run_game():
 		gf.check_events(stats, ai_settings, new_blocks, built_blocks, screen, filename_block, filename_score, score_board)
 		if stats.game_active:
 			gf.update_block(new_blocks, built_blocks, screen, ai_settings, stats, score_board, messages)
-		# 	piggy.update()
-		# 	gf.fire_bullet(ai_settings, screen, piggy, bullets)
-		# 	gf.update_bullets(screen, ai_settings, rocks, bullets, rewards, stats, score_board)
-		# 	gf.update_rocks(screen, ai_settings, rock_stats, rocks, piggy, stats, score_board)
-		# 	gf.update_rewards(shields, screen, ai_settings, piggy, rewards, score_board)
-		# 	gf.update_shields(shields, ai_settings, rocks)
-		# 	gf.check_round(stats, score_board, ai_settings)
 		
 		# create a play button
 		if stats.falls_left == 0:

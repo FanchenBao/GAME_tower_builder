@@ -1,5 +1,13 @@
+'''
+Author: Fanche Bao
+Date: 03/10/2018
+
+Description:
+GameStats class
+'''
+
 class GameStats():
-	'''track game statistics for alien invasion'''
+	'''track game statistics for tower builder'''
 	def __init__(self, ai_settings, filename_block, filename_score):
 		self.ai_settings = ai_settings
 		self.game_active = False		

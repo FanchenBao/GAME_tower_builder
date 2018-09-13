@@ -1,5 +1,13 @@
+'''
+Author: Fanche Bao
+Date: 03/10/2018
+
+Description:
+Settings class. Default settings.
+'''
+
 class Settings():
-	''' to store all settings for alien_invasion'''
+	''' to store all settings for the game'''
 	def __init__(self):
 		''' the static settings'''
 		self.screen_height = 750

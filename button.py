@@ -1,3 +1,11 @@
+'''
+Author: Fanche Bao
+Date: 03/10/2018
+
+Description:
+Button class, for displaying messages
+'''
+
 import pygame.font
 
 class Button():

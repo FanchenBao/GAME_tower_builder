@@ -1,3 +1,11 @@
+'''
+Author: Fanche Bao
+Date: 03/10/2018
+
+Description:
+ScoreBoard class, prepare messages for display
+'''
+
 import pygame.font
 from pygame.sprite import Group
 from block import Block

@@ -1,3 +1,11 @@
+'''
+Author: Fanche Bao
+Date: 03/10/2018
+
+Description:
+Block class
+'''
+
 import pygame
 from pygame.sprite import Sprite
 from random import randint
@@ -88,7 +96,7 @@ class Block(Sprite):
 
 	def lateral_shift(self, shift_range):
 		''' update the shifting of built blocks'''
-		# shift speed changes as the shift range increases. The larger the shifr range, the faster the shift speed.
+		# shift speed changes as the shift range increases. The larger the shift range, the faster the shift speed.
 		# the goal is to allow each shift to complete in the same unit time. 
 		# Here the unit time is set as 50 (but still haven't figured out its unit yet), which allows the blocks to shift in a satisfying rate
 		x_shift_speed = float(((shift_range - self.rect.width) / 2) / self.shift_duration)

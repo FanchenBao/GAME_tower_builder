@@ -1,3 +1,11 @@
+'''
+Author: Fanche Bao
+Date: 03/10/2018
+
+Description:
+Main module for game functions
+'''
+
 import sys
 import pygame
 from pygame.time import get_ticks
@@ -35,8 +43,8 @@ def shift_block(ai_settings, built_blocks, stats):
 				return
 			# when blocks are shifting, the edge check is DIFFERENT from regular method
 			# because the edges here are dynamic, and falling of blocks can cause the edge to shrink while the blocks are still outside the block.
-			# when this happens, block direction must not change until blocks to return within the shrunken edges 
-			# e.g. if blocks are moving right when edge shrink happens, block must continue moving right until it's within the new edges (even if its current left is more left to the edge, which should cause a change of direction)
+			# when this happens, block direction must not change until all blocks return within the shrunken edges 
+			# e.g. if blocks are moving right when edge shrink happens, block must continue moving right until it's within the new edges (even if its current left is more left to the new shift left edge, which should cause a change of direction)
 			else:
 				if block.rect.left <= stats.left_edge:
 					if ai_settings.block_shift_direction == -1:

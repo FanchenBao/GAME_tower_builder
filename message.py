@@ -1,3 +1,11 @@
+'''
+Author: Fanche Bao
+Date: 03/10/2018
+
+Description:
+Prepare message images
+'''
+
 import pygame
 from pygame.sprite import Sprite
 

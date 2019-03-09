@@ -9,7 +9,7 @@ _Major project inspired by Chapter 12 of "Python Crash Course" and a phone game 
 
 ## How to Launch The Game
 * Install [Python3](https://www.python.org/downloads/) and [pygame](https://www.pygame.org/wiki/GettingStarted) if necessary. 
-* Copy the entire repository to a local directory (including the image folder).
+* Clone the entire repository to a local directory (including the image folder).
 * Open console and go to the local directory.
 * Run the following command:
 ```bash
@@ -24,7 +24,7 @@ python3 tower_builder.py
 * Player can press ‘Q’ to quit the game any time during the game.
 * If, upon dropping a block, it hits the left or right edge, or if it fails to land properly on the existing tower, the block disappears and player has one fewer block to play with.
 * Imperfect landing causes the tower to shift left and right. The amount of shift is determined by how many pixels combined are the imperfect landing on the left and right side. The combined left and right pixels, along with the coordinate of the bottom block, determines the shifting range. Apparently, the more imperfect the landing, the larger the shift and the more difficult the game.
-* Perfect landing can reduce shifting range, thus aiming for perfect landing could potentially make the game easier, though making a perfect landing is not that easy.
+* Perfect landing can reduce shifting range, thus aiming for perfect landing could potentially make the game easier. Yet making perfect landing is not that easy.
 * ![Perfect Landing](https://github.com/FanchenBao/GAME_tower_builder/blob/master/images/perfect_landing.png "Perfect Landing")
 * High Score and Max Blocks record the highests score and maximum number of blocks built in the game. If player wishes to start fresh, simply set the value in both high_score.txt and max_block.txt to 0.
 
